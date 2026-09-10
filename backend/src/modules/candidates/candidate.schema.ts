@@ -40,8 +40,31 @@ export const publicApplySchema = z.object({
   skills: z.array(z.string()).default([]),
   education: z.array(z.string()).default([]),
   linkedInUrl: z.string().optional(),
+  githubUrl: z.string().optional(),
   portfolioUrl: z.string().optional(),
   resumeText: z.string().optional(),
+  jobId: z.string().optional(),
+  password: z.string().min(6).optional(),
+});
+
+export const updateCandidateProfileSchema = z.object({
+  fullName: z.string().min(2).optional(),
+  phone: z.string().optional(),
+  currentCity: z.string().optional(),
+  currentCompany: z.string().optional(),
+  currentDesignation: z.string().optional(),
+  totalExperienceYears: z.number().nonnegative().optional(),
+  skills: z.array(z.string()).optional(),
+  education: z.array(z.string()).optional(),
+  linkedInUrl: z.string().optional(),
+  githubUrl: z.string().optional(),
+  portfolioUrl: z.string().optional(),
+  parsedText: z.string().optional(),
+});
+
+export const respondOfferSchema = z.object({
+  decision: z.enum(['ACCEPTED', 'DECLINED']),
+  reason: z.string().optional(),
 });
 
 export const updateStageSchema = z.object({

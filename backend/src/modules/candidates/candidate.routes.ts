@@ -9,16 +9,25 @@ import {
   updateStageSchema,
   overrideScoreSchema,
   addNoteSchema,
+  updateCandidateProfileSchema,
+  respondOfferSchema,
 } from './candidate.schema.js';
 
 const router = Router();
 
-// Public application route
+// Public application routes (unauthenticated)
+router.post('/public-apply', validate({ body: publicApplySchema }), CandidateController.publicApply);
 router.post('/public-apply/:orgSlug/:jobSlug', validate({ body: publicApplySchema }), CandidateController.publicApply);
 
-// Authenticated recruitment routes
+// Authenticated recruitment & candidate routes
 router.use(requireAuth);
 
+// Candidate Self-Service Portal
+router.get('/me/portal', CandidateController.getCandidatePortalData);
+router.patch('/me/profile', validate({ body: updateCandidateProfileSchema }), CandidateController.updateCandidateProfile);
+router.post('/me/offers/:id/respond', validate({ body: respondOfferSchema }), CandidateController.respondToOffer);
+
+// Recruiter / Admin routes
 router.post('/', roleGuard(['ORG_ADMIN', 'RECRUITER']), validate({ body: createCandidateSchema }), CandidateController.createCandidate);
 router.get('/applications', CandidateController.listApplications);
 router.get('/compare', CandidateController.compareCandidates);

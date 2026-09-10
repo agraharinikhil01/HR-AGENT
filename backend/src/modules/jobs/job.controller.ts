@@ -72,6 +72,18 @@ export class JobController {
     }
   }
 
+  static async listAllPublicJobs(req: Request, res: Response, next: NextFunction) {
+    try {
+      const jobs = await JobService.listAllPublicJobs({
+        department: req.query.department as string,
+        search: req.query.search as string,
+      });
+      res.json({ success: true, data: jobs });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async getPublicJob(req: Request, res: Response, next: NextFunction) {
     try {
       const orgSlug = String(req.params.orgSlug);

@@ -7,7 +7,8 @@ import { createJobSchema, updateJobSchema, aiGenerateJdSchema } from './job.sche
 
 const router = Router();
 
-// Public Job view by organization slug & job slug
+// Public Job routes (unauthenticated)
+router.get('/public', JobController.listAllPublicJobs);
 router.get('/public/:orgSlug/:jobSlug', JobController.getPublicJob);
 
 // Authenticated recruitment routes

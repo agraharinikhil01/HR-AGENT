@@ -18,7 +18,18 @@ import { OffersList } from './pages/OffersList.js';
 import { CreateOffer } from './pages/CreateOffer.js';
 import { PublicJobApply } from './pages/PublicJobApply.js';
 import { PublicCandidateOfferPortal } from './pages/PublicCandidateOfferPortal.js';
+import { PublicCareers } from './pages/PublicCareers.js';
+import { CandidateDashboard } from './pages/CandidateDashboard.js';
 import { Settings } from './pages/Settings.js';
+import { useAuth } from './auth/AuthProvider.js';
+
+const MainDashboardRouter: React.FC = () => {
+  const { user } = useAuth();
+  if (user?.role === 'CANDIDATE') {
+    return <CandidateDashboard />;
+  }
+  return <Dashboard />;
+};
 
 export const App: React.FC = () => {
   return (
@@ -29,6 +40,7 @@ export const App: React.FC = () => {
             {/* Public Unauthenticated Routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<RegisterOrg />} />
+            <Route path="/careers" element={<PublicCareers />} />
             <Route path="/careers/:orgSlug/:jobSlug" element={<PublicJobApply />} />
             <Route path="/offers/view/:token" element={<PublicCandidateOfferPortal />} />
 
@@ -39,7 +51,8 @@ export const App: React.FC = () => {
                 <RequireAuth>
                   <AppLayout>
                     <Routes>
-                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/" element={<MainDashboardRouter />} />
+                      <Route path="/candidate/dashboard" element={<CandidateDashboard />} />
                       <Route path="/jobs" element={<JobsList />} />
                       <Route path="/jobs/create" element={<CreateJob />} />
                       <Route path="/candidates" element={<CandidatesPipeline />} />

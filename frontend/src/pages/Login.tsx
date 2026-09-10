@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { client } from '../lib/api/client.js';
 import { useAuth } from '../auth/AuthProvider.js';
-import { AlertCircle, Lock, Mail, Eye, EyeOff, Sparkles, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, Lock, Mail, Eye, EyeOff, Sparkles, CheckCircle2, Briefcase, ArrowRight } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -67,7 +67,7 @@ export const Login: React.FC = () => {
             <Sparkles className="h-3.5 w-3.5 text-[#84b81b]" />
             <span>1-Click Quick Login</span>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-1.5">
             <button
               type="button"
               onClick={() => {
@@ -75,7 +75,7 @@ export const Login: React.FC = () => {
                 setPassword('admin123');
                 handleLoginWith('agraharinikhil999@gmail.com', 'admin123');
               }}
-              className="flex items-center justify-center gap-1 rounded-xl bg-white px-2.5 py-1.5 font-bold text-[#0e1017] shadow-xs border border-[#edf2f7] hover:bg-[#84b81b] hover:text-white transition-all text-[11px]"
+              className="flex items-center justify-center gap-1 rounded-xl bg-white px-2 py-1.5 font-bold text-[#0e1017] shadow-xs border border-[#edf2f7] hover:bg-[#84b81b] hover:text-white transition-all text-[10px]"
             >
               <CheckCircle2 className="h-3 w-3 text-[#84b81b]" />
               <span>Nikhil (Admin)</span>
@@ -87,10 +87,22 @@ export const Login: React.FC = () => {
                 setPassword('admin123');
                 handleLoginWith('admin@techscale.io', 'admin123');
               }}
-              className="flex items-center justify-center gap-1 rounded-xl bg-white px-2.5 py-1.5 font-bold text-[#0e1017] shadow-xs border border-[#edf2f7] hover:bg-[#84b81b] hover:text-white transition-all text-[11px]"
+              className="flex items-center justify-center gap-1 rounded-xl bg-white px-2 py-1.5 font-bold text-[#0e1017] shadow-xs border border-[#edf2f7] hover:bg-[#84b81b] hover:text-white transition-all text-[10px]"
             >
               <CheckCircle2 className="h-3 w-3 text-[#84b81b]" />
-              <span>Demo TechScale</span>
+              <span>TechScale</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEmail('neha.patel@example.com');
+                setPassword('admin123');
+                handleLoginWith('neha.patel@example.com', 'admin123');
+              }}
+              className="flex items-center justify-center gap-1 rounded-xl bg-[#0e1017] px-2 py-1.5 font-bold text-white shadow-xs border border-[#0e1017] hover:bg-[#84b81b] transition-all text-[10px]"
+            >
+              <CheckCircle2 className="h-3 w-3 text-[#84b81b]" />
+              <span>Neha (Candidate)</span>
             </button>
           </div>
         </div>
@@ -153,11 +165,23 @@ export const Login: React.FC = () => {
           </button>
         </form>
 
-        <div className="text-center text-xs text-[#5e6b7c]">
-          Need a workspace for your company?{' '}
-          <Link to="/register" className="font-bold text-[#84b81b] hover:underline">
-            Register Organization
-          </Link>
+        <div className="text-center text-xs text-[#5e6b7c] space-y-2">
+          <div>
+            Need a workspace for your company?{' '}
+            <Link to="/register" className="font-bold text-[#84b81b] hover:underline">
+              Register Organization
+            </Link>
+          </div>
+          <div className="pt-2 border-t border-[#edf2f7]">
+            <Link
+              to="/careers"
+              className="inline-flex items-center gap-1.5 font-bold text-[#0e1017] hover:text-[#84b81b] transition-colors py-1 px-3 rounded-full bg-[#f8fafc] border border-[#e2e8f0] text-xs"
+            >
+              <Briefcase className="h-3.5 w-3.5 text-[#84b81b]" />
+              <span>Looking for Jobs or Internships? Explore Openings</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
         </div>
       </div>
     </div>

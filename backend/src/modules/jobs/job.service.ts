@@ -193,4 +193,23 @@ export class JobService {
       ],
     };
   }
+
+  static async listAllPublicJobs(filters?: { department?: string; search?: string }) {
+    const query: any = { status: 'Open', isDeleted: false };
+    if (filters?.department && filters.department !== 'All') {
+      query.department = filters.department;
+    }
+    if (filters?.search) {
+      query.$or = [
+        { title: { $regex: filters.search, $options: 'i' } },
+        { department: { $regex: filters.search, $options: 'i' } },
+        { mandatorySkills: { $regex: filters.search, $options: 'i' } },
+      ];
+    }
+    const jobs = await Job.find(query)
+      .populate('orgId', 'name slug industry website')
+      .sort({ createdAt: -1 });
+
+    return jobs;
+  }
 }

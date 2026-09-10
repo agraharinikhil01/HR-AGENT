@@ -133,8 +133,8 @@ export const Dashboard: React.FC = () => {
                 View Profile
               </Link>
               <Link
-                to={`/interviews?applicationId=${featuredApp._id}`}
-                className="rounded-xl bg-lime-500 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-lime-600 transition-colors"
+                to={`/interviews?applicationId=${featuredApp._id}&schedule=true`}
+                className="rounded-xl bg-[#84b81b] px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#729e18] transition-colors"
               >
                 Schedule Round
               </Link>

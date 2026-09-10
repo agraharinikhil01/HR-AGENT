@@ -163,7 +163,7 @@ export const CandidateDetail: React.FC = () => {
             </button>
 
             <Link
-              to={`/interviews?applicationId=${application._id}`}
+              to={`/interviews?applicationId=${application._id}&schedule=true`}
               className="flex items-center gap-2 rounded-full border border-[#edf2f7] bg-[#f8fafc] px-5 py-2.5 text-xs font-bold text-[#0e1017] hover:bg-slate-100 transition-colors"
             >
               <Calendar className="h-4 w-4 text-[#729e18]" />

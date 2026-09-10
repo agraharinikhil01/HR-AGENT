@@ -14,7 +14,7 @@ const envSchema = z.object({
   CLIENT_URL: z.string().url().default('http://localhost:5173'),
   CORS_ORIGINS: z.string().default('http://localhost:5173,http://localhost:3000'),
   ENCRYPTION_KEY: z.string().length(64, 'ENCRYPTION_KEY must be a 64-character hex string').default('0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'),
-  EMAIL_FROM: z.string().default('no-reply@hireflow.ai'),
+  EMAIL_FROM: z.string().default('onboarding@resend.dev'),
   SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.string().transform(Number).optional(),
   SMTP_USER: z.string().optional(),

@@ -1,0 +1,346 @@
+{
+  "info": {
+    "name": "HireFlow AI API",
+    "description": "Complete Postman collection for HireFlow AI - ATS, Recruitment & HR Document Automation",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health & Readiness",
+      "item": [
+        {
+          "name": "Liveness Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
+          }
+        },
+        {
+          "name": "Readiness Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/ready", "host": ["{{baseUrl}}"], "path": ["ready"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "1. Register Organization & Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.accessToken) {",
+                  "    pm.environment.set('accessToken', json.data.accessToken);",
+                  "    pm.environment.set('orgId', json.data.organization._id);",
+                  "    pm.environment.set('orgSlug', json.data.organization.slug);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organizationName\": \"TechScale Innovations\",\n  \"industry\": \"Software & SaaS\",\n  \"adminName\": \"Neha Sharma\",\n  \"email\": \"admin@techscale.io\",\n  \"password\": \"P@ssword123!\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "register"] }
+          }
+        },
+        {
+          "name": "2. Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.accessToken) {",
+                  "    pm.environment.set('accessToken', json.data.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@techscale.io\",\n  \"password\": \"P@ssword123!\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "login"] }
+          }
+        },
+        {
+          "name": "3. Get Profile (Me)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/me", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "me"] }
+          }
+        },
+        {
+          "name": "4. Refresh Access Token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/refresh", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "refresh"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Jobs",
+      "item": [
+        {
+          "name": "1. AI Generate Job Description",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Senior Full-Stack Engineer\",\n  \"industry\": \"SaaS\",\n  \"experienceLevel\": \"Senior (4-7 years)\",\n  \"requiredSkills\": [\"React\", \"Node.js\", \"TypeScript\", \"MongoDB\"],\n  \"workplaceType\": \"Hybrid\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/jobs/ai-generate-jd", "host": ["{{baseUrl}}"], "path": ["api", "v1", "jobs", "ai-generate-jd"] }
+          }
+        },
+        {
+          "name": "2. Create Job Opening",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data._id) {",
+                  "    pm.environment.set('jobId', json.data._id);",
+                  "    pm.environment.set('jobSlug', json.data.slug);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Senior Full-Stack Engineer\",\n  \"department\": \"Engineering\",\n  \"employmentType\": \"Full-time\",\n  \"workplaceType\": \"Hybrid\",\n  \"location\": \"Bengaluru, India\",\n  \"vacancies\": 2,\n  \"minExperienceYears\": 4,\n  \"maxExperienceYears\": 8,\n  \"minSalary\": 1800000,\n  \"maxSalary\": 3200000,\n  \"currency\": \"INR\",\n  \"description\": \"Lead end-to-end full stack architecture using React, Node.js and TypeScript.\",\n  \"responsibilities\": [\"Build high-scale APIs\", \"Own system reliability\"],\n  \"mandatorySkills\": [\"React\", \"Node.js\", \"TypeScript\"],\n  \"preferredSkills\": [\"AWS\", \"Docker\", \"Next.js\"],\n  \"noticePeriodPreferenceDays\": 30\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/jobs", "host": ["{{baseUrl}}"], "path": ["api", "v1", "jobs"] }
+          }
+        },
+        {
+          "name": "3. List Jobs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/jobs", "host": ["{{baseUrl}}"], "path": ["api", "v1", "jobs"] }
+          }
+        },
+        {
+          "name": "4. View Public Job",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/jobs/public/{{orgSlug}}/{{jobSlug}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "jobs", "public", "{{orgSlug}}", "{{jobSlug}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Candidates & Applications",
+      "item": [
+        {
+          "name": "1. Create Candidate & Application",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.application) {",
+                  "    pm.environment.set('applicationId', json.data.application._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Rahul Verma\",\n  \"email\": \"rahul.verma@example.com\",\n  \"phone\": \"+91 9876543210\",\n  \"currentCity\": \"Bengaluru\",\n  \"currentCompany\": \"CloudTech Pvt Ltd\",\n  \"currentDesignation\": \"Senior Software Engineer\",\n  \"totalExperienceYears\": 5,\n  \"expectedSalary\": 2600000,\n  \"noticePeriodDays\": 30,\n  \"skills\": [\"React\", \"Node.js\", \"TypeScript\", \"MongoDB\", \"AWS\"],\n  \"education\": [\"B.Tech Computer Science\"],\n  \"jobId\": \"{{jobId}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/candidates", "host": ["{{baseUrl}}"], "path": ["api", "v1", "candidates"] }
+          }
+        },
+        {
+          "name": "2. Public Apply",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Pooja Patel\",\n  \"email\": \"pooja.patel@example.com\",\n  \"phone\": \"+91 9123456780\",\n  \"currentCity\": \"Pune\",\n  \"totalExperienceYears\": 4,\n  \"noticePeriodDays\": 15,\n  \"skills\": [\"React\", \"TypeScript\", \"Redux\"],\n  \"education\": [\"B.E. Information Technology\"]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/candidates/public-apply/{{orgSlug}}/{{jobSlug}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "candidates", "public-apply", "{{orgSlug}}", "{{jobSlug}}"] }
+          }
+        },
+        {
+          "name": "3. List Applications",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/candidates/applications?jobId={{jobId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "candidates", "applications"], "query": [{ "key": "jobId", "value": "{{jobId}}" }] }
+          }
+        },
+        {
+          "name": "4. Update Application Stage",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stage\": \"Shortlisted\",\n  \"note\": \"Strong technical profile with 5 years full-stack experience\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/candidates/applications/{{applicationId}}/stage", "host": ["{{baseUrl}}"], "path": ["api", "v1", "candidates", "applications", "{{applicationId}}", "stage"] }
+          }
+        },
+        {
+          "name": "5. Override Score (Human in the loop)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"overrideScore\": 92,\n  \"reason\": \"Candidate demonstrated exceptional system architecture proficiency during initial call\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/candidates/applications/{{applicationId}}/override-score", "host": ["{{baseUrl}}"], "path": ["api", "v1", "candidates", "applications", "{{applicationId}}", "override-score"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Offers & Indian CTC Builder",
+      "item": [
+        {
+          "name": "1. Draft Offer with Indian CTC",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data._id) {",
+                  "    pm.environment.set('offerId', json.data._id);",
+                  "    pm.environment.set('candidatePortalToken', json.data.candidatePortalToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"applicationId\": \"{{applicationId}}\",\n  \"templateType\": \"Full-time\",\n  \"joiningDate\": \"2026-10-01\",\n  \"validUntil\": \"2026-09-25\",\n  \"reportingManager\": \"Anand K (VP Engineering)\",\n  \"workLocation\": \"Bengaluru, India\",\n  \"annualCtc\": 2400000,\n  \"basicPercentage\": 50,\n  \"hraPercentage\": 40,\n  \"variableAnnual\": 200000,\n  \"includePf\": true,\n  \"includeGratuity\": true\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/offers", "host": ["{{baseUrl}}"], "path": ["api", "v1", "offers"] }
+          }
+        },
+        {
+          "name": "2. Multi-Level Approve Offer",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"APPROVED\",\n  \"comments\": \"Compensation structure within approved salary grid\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/offers/{{offerId}}/approve", "host": ["{{baseUrl}}"], "path": ["api", "v1", "offers", "{{offerId}}", "approve"] }
+          }
+        },
+        {
+          "name": "3. Send Offer to Candidate",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/offers/{{offerId}}/send", "host": ["{{baseUrl}}"], "path": ["api", "v1", "offers", "{{offerId}}", "send"] }
+          }
+        },
+        {
+          "name": "4. Public Candidate Portal View",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/offers/public/{{candidatePortalToken}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "offers", "public", "{{candidatePortalToken}}"] }
+          }
+        },
+        {
+          "name": "5. Candidate Accept Offer with Signature",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"ACCEPT\",\n  \"signature\": \"Rahul Verma\",\n  \"comments\": \"Thrilled to accept the offer and join the team!\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/offers/public/{{candidatePortalToken}}/respond", "host": ["{{baseUrl}}"], "path": ["api", "v1", "offers", "public", "{{candidatePortalToken}}", "respond"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Get Recruitment Metrics",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/dashboard/metrics", "host": ["{{baseUrl}}"], "path": ["api", "v1", "dashboard", "metrics"] }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "id": "hireflow-ai-env",
+  "name": "HireFlow AI Local",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "tokenExpiry",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "orgId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "jobId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "jobSlug",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "orgSlug",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "applicationId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "offerId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "candidatePortalToken",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}

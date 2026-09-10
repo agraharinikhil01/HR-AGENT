@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import mongoose from 'mongoose';
 import { User, IUser, UserRole } from '../users/user.model.js';
 import { Organization } from '../organizations/organization.model.js';
+import { Candidate } from '../candidates/candidate.model.js';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../../utils/jwt.js';
 import { logAudit } from '../audit/audit.service.js';
 
@@ -72,6 +73,127 @@ export class AuthService {
       action: 'ORGANIZATION_REGISTERED',
       entityType: 'Organization',
       entityId: organization._id.toString(),
+      ipAddress: data.ipAddress,
+    });
+
+    return {
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        orgId: organization._id,
+      },
+      organization,
+      accessToken,
+      refreshToken: `${user._id.toString()}.${rawRefreshToken}`,
+    };
+  }
+
+  static async registerUser(data: {
+    name: string;
+    email: string;
+    password: string;
+    role?: 'CANDIDATE' | 'ORG_ADMIN' | 'RECRUITER';
+    phone?: string;
+    organizationName?: string;
+    ipAddress?: string;
+  }) {
+    const cleanEmail = data.email.trim().toLowerCase();
+    const cleanPassword = data.password.trim();
+    const role = data.role || 'CANDIDATE';
+
+    // Check if user already exists
+    const existing = await User.findOne({ email: cleanEmail, isDeleted: false });
+    if (existing) {
+      const err: any = new Error('An account with this email already exists. Please switch to Sign In.');
+      err.statusCode = 409;
+      err.code = 'CONFLICT';
+      throw err;
+    }
+
+    if (role === 'ORG_ADMIN' && data.organizationName) {
+      return this.registerOrgAndAdmin({
+        organizationName: data.organizationName,
+        industry: 'Technology',
+        adminName: data.name,
+        email: cleanEmail,
+        password: cleanPassword,
+        ipAddress: data.ipAddress,
+      });
+    }
+
+    // Assign to active organization
+    let organization = await Organization.findOne().sort({ createdAt: 1 });
+    if (!organization) {
+      organization = await Organization.create({
+        name: 'TechScale Innovations India',
+        slug: 'techscale-innovations',
+        industry: 'Software & SaaS',
+        departments: [
+          { name: 'Engineering' },
+          { name: 'Human Resources' },
+          { name: 'Product' },
+          { name: 'Sales & Marketing' },
+          { name: 'Finance' },
+        ],
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(cleanPassword, 12);
+
+    const user = await User.create({
+      orgId: organization._id,
+      name: data.name.trim(),
+      email: cleanEmail,
+      passwordHash,
+      role,
+      status: 'ACTIVE',
+    });
+
+    // If candidate, ensure candidate record exists
+    if (role === 'CANDIDATE') {
+      let candidate = await Candidate.findOne({ email: cleanEmail, isDeleted: false });
+      if (!candidate) {
+        await Candidate.create({
+          orgId: organization._id,
+          fullName: data.name.trim(),
+          email: cleanEmail,
+          phone: data.phone?.trim() || '',
+          skills: [],
+          source: 'PUBLIC_APPLICATION',
+          isDeleted: false,
+        });
+      }
+    }
+
+    const payload = {
+      userId: user._id.toString(),
+      orgId: organization._id.toString(),
+      role: user.role,
+    };
+
+    const accessToken = signAccessToken(payload);
+    const rawRefreshToken = crypto.randomBytes(40).toString('hex');
+    const refreshHash = await bcrypt.hash(rawRefreshToken, 10);
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    user.refreshTokens.push({
+      tokenHash: refreshHash,
+      createdAt: new Date(),
+      expiresAt,
+    });
+    await user.save();
+
+    await logAudit({
+      orgId: organization._id.toString(),
+      userId: user._id.toString(),
+      userName: user.name,
+      action: 'USER_REGISTERED',
+      entityType: 'User',
+      entityId: user._id.toString(),
       ipAddress: data.ipAddress,
     });
 

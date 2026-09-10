@@ -5,7 +5,16 @@ export const registerOrgSchema = z.object({
   industry: z.string().default('Technology'),
   adminName: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address').toLowerCase(),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+});
+
+export const registerUserSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  email: z.string().email('Invalid email address').toLowerCase(),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  role: z.enum(['CANDIDATE', 'ORG_ADMIN', 'RECRUITER']).default('CANDIDATE'),
+  phone: z.string().optional(),
+  organizationName: z.string().optional(),
 });
 
 export const loginSchema = z.object({

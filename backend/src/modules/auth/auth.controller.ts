@@ -32,6 +32,33 @@ export class AuthController {
     }
   }
 
+  static async registerUser(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await AuthService.registerUser({
+        ...req.body,
+        ipAddress: req.ip,
+      });
+
+      res.cookie('refreshToken', result.refreshToken, {
+        httpOnly: true,
+        secure: env.NODE_ENV === 'production',
+        sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      res.status(201).json({
+        success: true,
+        data: {
+          user: result.user,
+          organization: result.organization,
+          accessToken: result.accessToken,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async login(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await AuthService.login(req.body.email, req.body.password, req.ip);

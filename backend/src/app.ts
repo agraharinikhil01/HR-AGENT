@@ -65,8 +65,12 @@ app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// 5. NoSQL injection prevention
-app.use(mongoSanitize());
+// 5. NoSQL injection prevention (Express 5 compatible)
+app.use((req, res, next) => {
+  if (req.body) mongoSanitize.sanitize(req.body);
+  if (req.params) mongoSanitize.sanitize(req.params);
+  next();
+});
 
 // 6. Request logging
 if (env.NODE_ENV === 'development') {

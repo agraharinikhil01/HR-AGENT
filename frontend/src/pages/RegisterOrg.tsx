@@ -24,12 +24,20 @@ export const RegisterOrg: React.FC = () => {
     setLoading(true);
 
     try {
-      const res = await client.post('/auth/register', formData);
+      const res = await client.post('/auth/register', {
+        ...formData,
+        email: formData.email.trim().toLowerCase(),
+      });
       const { accessToken, user, organization } = res.data.data;
       login(accessToken, user, organization);
       navigate('/', { replace: true });
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Registration failed.');
+      const msg =
+        err.response?.data?.error?.message ||
+        (err.code === 'ERR_NETWORK'
+          ? 'Cannot reach backend server. Please check your internet connection.'
+          : 'Registration failed. Please check your details.');
+      setError(msg);
     } finally {
       setLoading(false);
     }

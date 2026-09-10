@@ -52,15 +52,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const bootstrap = async () => {
       try {
-        // 1. Attempt token refresh using HttpOnly cookie
-        const { data } = await refreshClient.post('/auth/refresh');
-        if (data?.data?.accessToken) {
-          tokenStore.set(data.data.accessToken);
-          // 2. Fetch authenticated profile
+        const storedToken = tokenStore.get();
+        if (storedToken) {
           await fetchCurrentUser();
+        } else {
+          // Attempt cookie refresh
+          const { data } = await refreshClient.post('/auth/refresh');
+          if (data?.data?.accessToken) {
+            tokenStore.set(data.data.accessToken);
+            await fetchCurrentUser();
+          }
         }
       } catch {
-        // No valid session cookie found; stay logged out
+        tokenStore.clear();
+        setUser(null);
+        setOrganization(null);
       } finally {
         setLoading(false);
       }

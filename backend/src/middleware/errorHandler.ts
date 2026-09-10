@@ -94,7 +94,7 @@ export function errorHandler(
     success: false,
     error: {
       code: 'INTERNAL_ERROR',
-      message: 'An unexpected internal server error occurred',
+      message: err.message || 'An unexpected internal server error occurred',
     },
   });
 }

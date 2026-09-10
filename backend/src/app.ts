@@ -37,20 +37,26 @@ app.get('/ready', (req, res) => {
 app.use(helmet());
 
 // 3. CORS allowlist
-const origins = env.CORS_ORIGINS.split(',').map((o) => o.trim());
+const configuredOrigins = env.CORS_ORIGINS.split(',').map((o) => o.trim());
 app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps, curl, postman)
-      if (!origin || origins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error(`Origin ${origin} not allowed by CORS`));
+      if (!origin) return callback(null, true);
+
+      // Allow configured origins
+      if (configuredOrigins.includes(origin)) return callback(null, true);
+
+      // Allow any Vercel deployment (*.vercel.app) and local development
+      if (origin.endsWith('.vercel.app') || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        return callback(null, true);
       }
+
+      return callback(null, false);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-csrf-token'],
   })
 );
 

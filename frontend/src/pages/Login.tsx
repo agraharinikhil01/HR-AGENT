@@ -430,41 +430,32 @@ export const Login: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    setAuthMode('login');
-                    setEmail('agraharinikhil999@gmail.com');
-                    setPassword('admin123');
                     handleLoginWith('agraharinikhil999@gmail.com', 'admin123');
                   }}
                   className="flex items-center justify-center gap-1 rounded-xl bg-white px-2 py-1.5 font-bold text-[#0e1017] shadow-xs border border-[#edf2f7] hover:bg-[#84b81b] hover:text-white transition-all text-[10px]"
                 >
                   <CheckCircle2 className="h-3 w-3 text-[#84b81b]" />
-                  <span>Nikhil (Admin)</span>
+                  <span>Admin Demo</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => {
-                    setAuthMode('login');
-                    setEmail('admin@techscale.io');
-                    setPassword('admin123');
                     handleLoginWith('admin@techscale.io', 'admin123');
                   }}
                   className="flex items-center justify-center gap-1 rounded-xl bg-white px-2 py-1.5 font-bold text-[#0e1017] shadow-xs border border-[#edf2f7] hover:bg-[#84b81b] hover:text-white transition-all text-[10px]"
                 >
                   <CheckCircle2 className="h-3 w-3 text-[#84b81b]" />
-                  <span>TechScale</span>
+                  <span>Recruiter Demo</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => {
-                    setAuthMode('login');
-                    setEmail('neha.patel@example.com');
-                    setPassword('admin123');
                     handleLoginWith('neha.patel@example.com', 'admin123');
                   }}
                   className="flex items-center justify-center gap-1 rounded-xl bg-[#0e1017] px-2 py-1.5 font-bold text-white shadow-xs border border-[#0e1017] hover:bg-[#84b81b] transition-all text-[10px]"
                 >
                   <CheckCircle2 className="h-3 w-3 text-[#84b81b]" />
-                  <span>Neha (Candidate)</span>
+                  <span>Candidate Demo</span>
                 </button>
               </div>
             </div>

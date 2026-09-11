@@ -21,6 +21,8 @@ const envSchema = z.object({
   SMTP_PASS: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
   SENTRY_DSN: z.string().optional(),
+  CLOUDFLARE_TURNSTILE_SECRET: z.string().optional(),
+  UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

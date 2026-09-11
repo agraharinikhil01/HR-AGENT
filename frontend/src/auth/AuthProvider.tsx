@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { client } from '../lib/api/client.js';
 import { refreshClient } from '../lib/api/refreshClient.js';
 import { tokenStore } from './tokenStore.js';
+import { frontendEnv } from '../lib/env.js';
 
 export interface UserProfile {
   _id: string;
@@ -50,6 +51,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    // Immediate pre-warm ping to wake up cloud backend on page load
+    if (typeof window !== 'undefined' && !window.location.hostname.includes('localhost')) {
+      fetch(`${frontendEnv.VITE_API_BASE_URL}/health`, { mode: 'no-cors' }).catch(() => {});
+    }
+
     const bootstrap = async () => {
       try {
         const storedToken = tokenStore.get();

@@ -13,6 +13,18 @@ async function bootstrap() {
   server.listen(env.PORT, () => {
     console.log(`🚀 HireFlow AI Server running in ${env.NODE_ENV} mode on port ${env.PORT}`);
     console.log(`📡 Health check available at http://localhost:${env.PORT}/health`);
+
+    // Self-ping every 10 minutes to prevent Render from going to sleep
+    if (env.NODE_ENV === 'production') {
+      const PING_INTERVAL = 10 * 60 * 1000;
+      setInterval(async () => {
+        try {
+          await fetch('https://hr-agent-backend-36sm.onrender.com/health');
+        } catch {
+          // Ignore network errors in ping
+        }
+      }, PING_INTERVAL);
+    }
   });
 
   const shutdown = async (signal: string) => {

@@ -36,12 +36,8 @@ app.get('/ready', (req, res) => {
 // 2. Security headers
 app.use(helmet());
 
-// 3. Strict CORS allowlist (Lock to production domain & configured origins)
+// 3. Resilient CORS allowlist
 const configuredOrigins = env.CORS_ORIGINS.split(',').map((o) => o.trim());
-const allowedProductionOrigins = [
-  'https://hr-agent-steel.vercel.app',
-  'https://hr-agent-backend-36sm.onrender.com',
-];
 
 app.use(
   cors({
@@ -49,16 +45,21 @@ app.use(
       // Allow requests with no origin (like health checks, server-to-server, curl)
       if (!origin) return callback(null, true);
 
-      // Strict match for our production frontend domain
-      if (allowedProductionOrigins.includes(origin)) return callback(null, true);
+      // Allow configured origins
       if (configuredOrigins.includes(origin)) return callback(null, true);
 
-      // Allow localhost only in non-production environments
-      if (env.NODE_ENV !== 'production' && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+      // Allow all Vercel deployments (*.vercel.app)
+      if (origin.endsWith('.vercel.app')) return callback(null, true);
+
+      // Allow Render services (*.onrender.com)
+      if (origin.endsWith('.onrender.com')) return callback(null, true);
+
+      // Allow local development
+      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
         return callback(null, true);
       }
 
-      return callback(new Error(`CORS policy violation: Origin '${origin}' is not authorized.`));
+      return callback(null, false);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],

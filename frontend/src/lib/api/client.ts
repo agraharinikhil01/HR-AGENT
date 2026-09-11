@@ -6,7 +6,7 @@ import { frontendEnv } from '../env.js';
 export const client = axios.create({
   baseURL: `${frontendEnv.VITE_API_BASE_URL}/api/v1`,
   withCredentials: true,
-  timeout: 12000,
+  timeout: 60000,
 });
 
 // Request interceptor: attach bearer token from memory
@@ -26,6 +26,20 @@ client.interceptors.response.use(
   (res) => res,
   async (error) => {
     const original = error.config;
+
+    // Auto-retry on cold-start (Render waking up from sleep)
+    const isNetworkOrTimeout =
+      error.code === 'ECONNABORTED' ||
+      error.code === 'ERR_NETWORK' ||
+      [502, 503, 504].includes(error.response?.status);
+
+    if (isNetworkOrTimeout && original && !original._hasRetriedColdStart) {
+      original._hasRetriedColdStart = true;
+      // Wait 2.5 seconds for Render container to initialize and retry
+      await new Promise((r) => setTimeout(r, 2500));
+      return client(original);
+    }
+
     if (
       error.response?.status === 401 &&
       error.response?.data?.error?.code === 'TOKEN_EXPIRED' &&

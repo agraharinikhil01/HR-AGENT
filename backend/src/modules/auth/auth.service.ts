@@ -112,7 +112,7 @@ export class AuthService {
       throw err;
     }
 
-    if (role === 'ORG_ADMIN' && data.organizationName) {
+    if ((role === 'ORG_ADMIN' || role === 'RECRUITER') && data.organizationName) {
       return this.registerOrgAndAdmin({
         organizationName: data.organizationName,
         industry: 'Technology',

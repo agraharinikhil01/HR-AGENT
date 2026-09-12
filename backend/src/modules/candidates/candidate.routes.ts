@@ -44,6 +44,8 @@ router.get('/:id/resume', CandidateController.downloadResume);
 
 // Recruiter / Admin routes
 router.post('/', roleGuard(['ORG_ADMIN', 'RECRUITER']), validate({ body: createCandidateSchema }), CandidateController.createCandidate);
+router.post('/batch-ats-screen', roleGuard(['ORG_ADMIN', 'RECRUITER']), uploadResume.array('resumes', 25), CandidateController.batchAtsScreen);
+router.post('/batch-import', roleGuard(['ORG_ADMIN', 'RECRUITER']), CandidateController.batchImportCandidates);
 router.get('/applications', CandidateController.listApplications);
 router.get('/compare', CandidateController.compareCandidates);
 router.get('/applications/:id', CandidateController.getApplicationById);

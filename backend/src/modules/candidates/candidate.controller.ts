@@ -12,6 +12,7 @@ import { NotFoundError } from '../../utils/ownershipCheck.js';
 import { signAccessToken } from '../../utils/jwt.js';
 import { sendEmail } from '../../services/email.service.js';
 import { parsePdfResume } from '../../utils/resumeParser.js';
+import { calculateCandidateFitScore } from '../../utils/fitScoreCalculator.js';
 
 export class CandidateController {
   static async createCandidate(req: Request, res: Response, next: NextFunction) {
@@ -480,6 +481,185 @@ export class CandidateController {
         success: true,
         message: 'Candidate selected as top recommendation and shortlisted!',
         data: application,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async batchAtsScreen(req: Request, res: Response, next: NextFunction) {
+    try {
+      const files = req.files as Express.Multer.File[];
+      if (!files || files.length === 0) {
+        return res.status(400).json({ success: false, message: 'Please upload at least one PDF resume.' });
+      }
+
+      const jobId = req.body.jobId ? String(req.body.jobId) : undefined;
+      let targetJob: any = null;
+      if (jobId) {
+        targetJob = await Job.findOne({ _id: jobId, orgId: req.user!.orgId, isDeleted: false });
+      }
+
+      const screenedResults: any[] = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const parsed = await parsePdfResume(file.buffer, file.originalname);
+        const resumeBase64 = `data:${file.mimetype || 'application/pdf'};base64,${file.buffer.toString('base64')}`;
+
+        let fitResult: any = null;
+        if (targetJob) {
+          fitResult = calculateCandidateFitScore({
+            skills: parsed.extractedSkills,
+            totalExperienceYears: parsed.estimatedExperienceYears,
+            noticePeriodDays: 30,
+            education: [],
+            job: {
+              title: targetJob.title,
+              department: targetJob.department,
+              minExperienceYears: targetJob.minExperienceYears || 0,
+              preferredNoticePeriodDays: targetJob.preferredNoticePeriodDays || 60,
+              mandatorySkills: targetJob.mandatorySkills || [],
+              preferredSkills: targetJob.preferredSkills || [],
+            },
+          });
+        }
+
+        const atsScore = fitResult ? fitResult.overallScore : parsed.atsEvaluation.overallScore;
+        const grade = parsed.atsEvaluation.grade;
+        const category = atsScore >= 80 ? 'BEST' : atsScore >= 60 ? 'AVERAGE' : 'POOR';
+        const categoryLabel =
+          category === 'BEST'
+            ? 'Top ATS Pick (Best Match)'
+            : category === 'AVERAGE'
+            ? 'Moderate Candidate Match'
+            : 'Low ATS Score (Needs Optimization)';
+
+        screenedResults.push({
+          tempId: `batch_${Date.now()}_${i}`,
+          fileName: file.originalname,
+          fileSizeBytes: file.size,
+          candidateName: parsed.extractedName || `Candidate ${i + 1}`,
+          email: parsed.extractedEmail || `candidate${i + 1}@screened.talent`,
+          phone: parsed.extractedPhone || '+91 98765 43210',
+          totalExperienceYears: parsed.estimatedExperienceYears,
+          skills: parsed.extractedSkills,
+          skillsCount: parsed.extractedSkills.length,
+          atsScore,
+          grade,
+          category,
+          categoryLabel,
+          breakdown: parsed.atsEvaluation.categoryScores,
+          strengths: parsed.atsEvaluation.strengths,
+          improvements: parsed.atsEvaluation.improvements,
+          jobFit: fitResult
+            ? {
+                jobTitle: targetJob.title,
+                matchedSkills: fitResult.matchedMandatorySkills || [],
+                missingSkills: fitResult.missingMandatorySkills || [],
+              }
+            : undefined,
+          resumeBase64,
+          parsedText: parsed.text,
+        });
+      }
+
+      // Sort descending: highest ATS score first
+      screenedResults.sort((a, b) => b.atsScore - a.atsScore);
+
+      // Assign ranks #1, #2, #3...
+      screenedResults.forEach((item, idx) => {
+        item.rank = idx + 1;
+      });
+
+      res.json({
+        success: true,
+        data: {
+          totalScreened: screenedResults.length,
+          bestCount: screenedResults.filter((r) => r.category === 'BEST').length,
+          averageCount: screenedResults.filter((r) => r.category === 'AVERAGE').length,
+          poorCount: screenedResults.filter((r) => r.category === 'POOR').length,
+          job: targetJob ? { _id: targetJob._id, title: targetJob.title } : null,
+          results: screenedResults,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async batchImportCandidates(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { candidates, jobId, stage = 'Shortlisted' } = req.body;
+      if (!Array.isArray(candidates) || candidates.length === 0) {
+        return res.status(400).json({ success: false, message: 'No candidates provided for import.' });
+      }
+
+      const importedResults: any[] = [];
+
+      for (const item of candidates) {
+        try {
+          const resItem = await CandidateService.createCandidateWithApplication(
+            req.user!.orgId,
+            {
+              fullName: item.candidateName || item.fullName || 'Screened Candidate',
+              email: item.email,
+              phone: item.phone,
+              skills: item.skills || [],
+              totalExperienceYears: item.totalExperienceYears || 0,
+              currentCompany: item.currentCompany || 'Screened via Batch ATS',
+              currentDesignation: item.currentDesignation || 'Candidate',
+              expectedSalary: item.expectedSalary || 1500000,
+              noticePeriodDays: item.noticePeriodDays || 30,
+              resumeBase64: item.resumeBase64,
+              resumeOriginalName: item.fileName || item.resumeOriginalName,
+              resumeSizeBytes: item.fileSizeBytes || item.resumeSizeBytes,
+              atsEvaluation: {
+                overallScore: item.atsScore,
+                grade: item.grade || 'A',
+                gradeLabel: item.categoryLabel || 'Screened',
+                categoryScores: item.breakdown || {
+                  skillsScore: item.atsScore,
+                  experienceScore: item.atsScore,
+                  contactScore: 90,
+                  formattingScore: 90,
+                },
+                strengths: item.strengths || [],
+                improvements: item.improvements || [],
+              },
+              jobId: jobId || item.jobId,
+            },
+            {
+              id: req.user!._id,
+              name: req.user!.name,
+              ip: req.ip,
+            }
+          );
+
+          // If target stage is specified and different from Applied, advance it
+          if (stage && stage !== 'Applied' && resItem.application) {
+            await CandidateService.updateStage(
+              req.user!.orgId,
+              resItem.application._id.toString(),
+              stage,
+              {
+                id: req.user!._id,
+                name: req.user!.name,
+                ip: req.ip,
+              }
+            );
+          }
+
+          importedResults.push(resItem);
+        } catch (candidateErr: any) {
+          console.error(`Failed to import candidate ${item.candidateName}:`, candidateErr.message);
+        }
+      }
+
+      res.status(201).json({
+        success: true,
+        message: `Successfully imported ${importedResults.length} candidates into your recruitment pipeline!`,
+        data: importedResults,
       });
     } catch (error) {
       next(error);

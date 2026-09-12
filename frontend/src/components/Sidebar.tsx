@@ -33,6 +33,7 @@ export const Sidebar: React.FC = () => {
         { label: 'Overview', path: '/', icon: LayoutDashboard },
         { label: 'Job Openings', path: '/jobs', icon: Briefcase },
         { label: 'Candidates Pipeline', path: '/candidates', icon: Users },
+        { label: 'Batch ATS Screener', path: '/ats-screener', icon: Sparkles, badge: 'NEW' },
         { label: 'Interviews', path: '/interviews', icon: Calendar },
       ];
 
@@ -107,6 +108,11 @@ export const Sidebar: React.FC = () => {
                   >
                     <Icon className={`h-4 w-4 ${isActive ? 'text-[#729e18]' : 'text-[#8b98a9]'}`} />
                     <span>{item.label}</span>
+                    {(item as any).badge && (
+                      <span className="ml-auto rounded-full bg-[#84b81b] px-1.5 py-0.5 text-[9px] font-black text-white">
+                        {(item as any).badge}
+                      </span>
+                    )}
                   </Link>
                 );
               })}

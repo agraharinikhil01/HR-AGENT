@@ -206,6 +206,15 @@ export const CandidatesPipeline: React.FC = () => {
             </button>
           )}
 
+          <Link
+            to="/ats-screener"
+            className="flex items-center gap-1.5 rounded-full bg-[#0e1017] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-slate-800 transition-colors"
+          >
+            <Sparkles className="h-3.5 w-3.5 text-[#84b81b]" />
+            <span>Batch ATS Screener</span>
+            <span className="rounded-full bg-[#84b81b] px-1.5 py-0.2 text-[9px] font-black text-white">NEW</span>
+          </Link>
+
           <button
             onClick={() => setShowAddModal(true)}
             className="flex items-center gap-1.5 rounded-full bg-[#84b81b] px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#729e18] transition-colors"
@@ -406,11 +415,15 @@ export const CandidatesPipeline: React.FC = () => {
                       >
                         {/* Top: Score pill & Compare checkbox */}
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <div className="flex items-center gap-1 rounded-full bg-[#edf7d2] px-2.5 py-0.5 text-[10px] font-black text-[#567715]">
                               <Sparkles className="h-3 w-3 text-[#84b81b]" />
-                              <span>{app.fitScore}% Fit</span>
+                              <span>{candidate?.atsScore || app.fitScore}% ATS</span>
                             </div>
+
+                            <span className="rounded-full bg-[#f1f5f9] px-2 py-0.5 text-[9px] font-black text-slate-700">
+                              Grade {candidate?.atsGrade || (app.fitScore >= 85 ? 'A+' : app.fitScore >= 70 ? 'A' : 'B')}
+                            </span>
 
                             {candidate?.resumeBase64 && (
                               <button

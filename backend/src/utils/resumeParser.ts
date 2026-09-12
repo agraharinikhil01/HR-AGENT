@@ -35,6 +35,7 @@ export interface AtsEvaluation {
 
 export interface ParsedResumeResult {
   text: string;
+  extractedName?: string;
   extractedSkills: string[];
   estimatedExperienceYears: number;
   extractedEmail?: string;
@@ -166,7 +167,39 @@ export function evaluateResumeAts(params: {
   };
 }
 
-export async function parsePdfResume(pdfBuffer: Buffer): Promise<ParsedResumeResult> {
+export function extractCandidateName(text: string, originalFilename?: string): string {
+  // 1. Try extracting clean candidate name from original filename
+  if (originalFilename) {
+    const cleanFn = originalFilename
+      .replace(/\.pdf$/i, '')
+      .replace(/[_\-\+]/g, ' ')
+      .replace(/\s*\(\d+\)\s*/g, '')
+      .replace(/\b(?:resume|cv|biodata|profile|fresher|updated|latest|new)\b/gi, '')
+      .replace(/[^a-zA-Z\s]/g, '')
+      .trim();
+
+    const parts = cleanFn.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2 && parts.length <= 4 && parts.every((p) => p.length >= 2)) {
+      return parts.map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' ');
+    }
+  }
+
+  // 2. Try extracting from the first clean lines of the resume text
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  for (const line of lines.slice(0, 5)) {
+    // Avoid lines with contact indicators or job titles
+    if (/@|http|\.com|\+?\d{5,}|curriculum|resume|skills|experience/i.test(line)) continue;
+    const cleanLine = line.replace(/[^a-zA-Z\s]/g, '').trim();
+    const words = cleanLine.split(/\s+/).filter(Boolean);
+    if (words.length >= 2 && words.length <= 4 && words.every((w) => w.length >= 2)) {
+      return words.map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+    }
+  }
+
+  return 'Candidate';
+}
+
+export async function parsePdfResume(pdfBuffer: Buffer, originalFilename?: string): Promise<ParsedResumeResult> {
   let text = '';
   try {
     const uint8 = new Uint8Array(pdfBuffer);
@@ -215,6 +248,7 @@ export async function parsePdfResume(pdfBuffer: Buffer): Promise<ParsedResumeRes
     const extractedPhone = phoneMatch ? phoneMatch[0].trim() : undefined;
 
     const extractedSkills = Array.from(extractedSkillsSet);
+    const extractedName = extractCandidateName(text, originalFilename);
 
     const atsEvaluation = evaluateResumeAts({
       text,
@@ -226,6 +260,7 @@ export async function parsePdfResume(pdfBuffer: Buffer): Promise<ParsedResumeRes
 
     return {
       text,
+      extractedName,
       extractedSkills,
       estimatedExperienceYears,
       extractedEmail,
@@ -236,6 +271,7 @@ export async function parsePdfResume(pdfBuffer: Buffer): Promise<ParsedResumeRes
     console.error('Failed to parse PDF resume:', error);
     return {
       text: '',
+      extractedName: extractCandidateName('', originalFilename),
       extractedSkills: [],
       estimatedExperienceYears: 0,
       atsEvaluation: {

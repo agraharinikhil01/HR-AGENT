@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { client } from '../lib/api/client.js';
 import { ArrowLeft, Calculator, AlertCircle } from 'lucide-react';
+import { CtcDonutChart } from '../components/CtcDonutChart.js';
 
 export const CreateOffer: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -300,7 +301,17 @@ export const CreateOffer: React.FC = () => {
               </h3>
             </div>
 
-            <div className="mt-4 space-y-2.5 text-xs">
+            <div className="mt-4 space-y-4">
+              <CtcDonutChart
+                annualCtc={annualCtc}
+                basicAnnual={annualBasic}
+                hraAnnual={annualHra}
+                specialAllowanceAnnual={annualSpecial}
+                variableAnnual={variableAnnual}
+                retiralsAnnual={annualRetirals}
+              />
+
+              <div className="space-y-2.5 text-xs">
               <div className="flex justify-between py-1 border-b border-[#edf2f7]">
                 <span className="text-[#5e6b7c]">Basic Salary</span>
                 <span className="font-bold text-[#0e1017]">₹{annualBasic.toLocaleString('en-IN')}</span>
@@ -337,8 +348,9 @@ export const CreateOffer: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
 
-            <button
+          <button
               type="submit"
               disabled={submitting}
               className="mt-6 w-full rounded-full bg-[#84b81b] py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#729e18] transition-colors disabled:opacity-50"

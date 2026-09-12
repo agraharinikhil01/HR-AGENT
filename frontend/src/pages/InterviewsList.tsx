@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { client } from '../lib/api/client.js';
 import { useAuth } from '../auth/AuthProvider.js';
 import {
@@ -16,6 +16,7 @@ import {
   User,
   AlertCircle,
   ExternalLink,
+  Mic,
 } from 'lucide-react';
 
 const getDefaultScheduleTime = () => {
@@ -203,16 +204,26 @@ export const InterviewsList: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={() => {
-            setScheduleError(null);
-            setIsScheduleOpen(true);
-          }}
-          className="flex items-center gap-2 rounded-full bg-[#84b81b] px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#729e18] transition-all self-start sm:self-auto"
-        >
-          <Plus className="h-4 w-4 stroke-[3]" />
-          <span>Schedule New Round</span>
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <Link
+            to="/interview-simulator"
+            className="flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-[#0e1017] hover:bg-slate-50 transition-all shadow-2xs"
+          >
+            <Mic className="h-4 w-4 text-[#84b81b]" />
+            <span>AI Mock Simulator (PRO)</span>
+          </Link>
+
+          <button
+            onClick={() => {
+              setScheduleError(null);
+              setIsScheduleOpen(true);
+            }}
+            className="flex items-center gap-2 rounded-full bg-[#84b81b] px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#729e18] transition-all"
+          >
+            <Plus className="h-4 w-4 stroke-[3]" />
+            <span>Schedule New Round</span>
+          </button>
+        </div>
       </div>
 
       {scheduleSuccessMsg && (

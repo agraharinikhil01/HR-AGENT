@@ -24,5 +24,6 @@ router.post(
   InterviewController.submitScorecard
 );
 router.get('/:id/summary', InterviewController.getFeedbackSummary);
+router.post('/mock-evaluate', InterviewController.evaluateMockAnswer);
 
 export const interviewRoutes = router;

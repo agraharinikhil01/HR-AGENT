@@ -14,6 +14,7 @@ import {
   UserCheck,
   Building2,
   ChevronDown,
+  Mic,
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -24,6 +25,7 @@ export const Sidebar: React.FC = () => {
 
   const candidateNavItems = [
     { label: 'My Applications', path: '/', icon: LayoutDashboard },
+    { label: 'AI Mock Interview', path: '/interview-simulator', icon: Mic, badge: 'PRACTICE' },
     { label: 'Explore Openings', path: '/careers', icon: Briefcase },
   ];
 
@@ -34,6 +36,7 @@ export const Sidebar: React.FC = () => {
         { label: 'Job Openings', path: '/jobs', icon: Briefcase },
         { label: 'Candidates Pipeline', path: '/candidates', icon: Users },
         { label: 'Batch ATS Screener', path: '/ats-screener', icon: Sparkles, badge: 'NEW' },
+        { label: 'AI Mock Interview', path: '/interview-simulator', icon: Mic, badge: 'PRO' },
         { label: 'Interviews', path: '/interviews', icon: Calendar },
       ];
 

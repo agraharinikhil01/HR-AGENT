@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { InterviewService } from './interview.service.js';
+import { evaluateMockInterviewAnswer } from '../../utils/aiInterviewEvaluator.js';
 
 export class InterviewController {
   static async scheduleInterview(req: Request, res: Response, next: NextFunction) {
@@ -75,6 +76,21 @@ export class InterviewController {
       );
       const summary = InterviewService.generateFeedbackSummary(interview.scorecards);
       res.json({ success: true, data: summary });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async evaluateMockAnswer(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { question, answer, category, role } = req.body;
+      const evaluation = evaluateMockInterviewAnswer({
+        question: question || 'Technical Interview Question',
+        answer: answer || '',
+        category: category || 'TECHNICAL',
+        role: role || 'Software Engineer',
+      });
+      res.json({ success: true, data: evaluation });
     } catch (error) {
       next(error);
     }

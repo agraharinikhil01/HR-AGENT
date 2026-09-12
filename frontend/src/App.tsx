@@ -21,6 +21,7 @@ import { PublicCandidateOfferPortal } from './pages/PublicCandidateOfferPortal.j
 import { PublicCareers } from './pages/PublicCareers.js';
 import { CandidateDashboard } from './pages/CandidateDashboard.js';
 import { BatchAtsScreener } from './pages/BatchAtsScreener.js';
+import { AiInterviewSimulator } from './pages/AiInterviewSimulator.js';
 import { Settings } from './pages/Settings.js';
 import { useAuth } from './auth/AuthProvider.js';
 
@@ -59,6 +60,7 @@ export const App: React.FC = () => {
                       <Route path="/candidates" element={<CandidatesPipeline />} />
                       <Route path="/candidates/:id" element={<CandidateDetail />} />
                       <Route path="/ats-screener" element={<BatchAtsScreener />} />
+                      <Route path="/interview-simulator" element={<AiInterviewSimulator />} />
                       <Route path="/interviews" element={<InterviewsList />} />
                       <Route path="/offers" element={<OffersList />} />
                       <Route path="/offers/create" element={<CreateOffer />} />

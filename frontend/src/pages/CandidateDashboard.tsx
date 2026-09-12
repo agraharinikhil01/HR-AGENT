@@ -24,6 +24,9 @@ import {
   ChevronRight,
   Send,
   DollarSign,
+  FileText,
+  UploadCloud,
+  Download,
 } from 'lucide-react';
 
 const PIPELINE_STAGES = [
@@ -61,6 +64,60 @@ export const CandidateDashboard: React.FC = () => {
 
   // Offer decision state
   const [respondingOfferId, setRespondingOfferId] = useState<string | null>(null);
+
+  // Resume Upload State
+  const [resumeUploading, setResumeUploading] = useState(false);
+  const [resumeUploadError, setResumeUploadError] = useState<string | null>(null);
+  const [resumeUploadSuccess, setResumeUploadSuccess] = useState<string | null>(null);
+
+  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0]) return;
+    const file = e.target.files[0];
+
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      setResumeUploadError('Only PDF documents (.pdf) are allowed.');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setResumeUploadError('Resume file size cannot exceed 10MB.');
+      return;
+    }
+
+    setResumeUploading(true);
+    setResumeUploadError(null);
+    setResumeUploadSuccess(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('resume', file);
+
+      const res = await client.post('/candidates/me/resume', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      setResumeUploadSuccess(
+        `Resume updated! Parsed ${res.data.data.extractedSkills?.length || 0} skills and refreshed ATS match score.`
+      );
+      await fetchPortalData();
+    } catch (err: any) {
+      setResumeUploadError(err.response?.data?.message || 'Failed to upload resume. Please try again.');
+    } finally {
+      setResumeUploading(false);
+    }
+  };
+
+  const handleDownloadResume = async (candidateId: string) => {
+    try {
+      const res = await client.get(`/candidates/${candidateId}/resume`, {
+        responseType: 'blob',
+      });
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (err: any) {
+      alert('Could not open resume. Please try uploading a fresh PDF version.');
+    }
+  };
 
   const fetchPortalData = async () => {
     try {
@@ -433,6 +490,117 @@ export const CandidateDashboard: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* 4.5 My Resume / CV & AI ATS Profile */}
+      <div className="rounded-3xl border border-[#edf2f7] bg-white p-6 shadow-sm space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-[#edf2f7]">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#edf7d2] text-[#84b81b]">
+              <FileText className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold text-[#0e1017]">My Resume / CV & AI ATS Profile</h2>
+                <span className="rounded bg-[#84b81b] text-white px-2 py-0.5 text-[10px] font-black">
+                  AI ATS READY
+                </span>
+              </div>
+              <p className="text-xs text-[#5e6b7c]">
+                Your uploaded PDF resume is parsed by AI to calculate your ATS match score for recruiters
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label className="cursor-pointer inline-flex items-center gap-2 rounded-full bg-[#84b81b] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#729e18] transition-all">
+              <UploadCloud className="h-4 w-4" />
+              <span>{resumeUploading ? 'Parsing & Saving...' : candidate?.resumeBase64 ? 'Replace PDF Resume' : 'Upload PDF Resume'}</span>
+              <input
+                type="file"
+                accept=".pdf,application/pdf"
+                disabled={resumeUploading}
+                className="hidden"
+                onChange={handleResumeUpload}
+              />
+            </label>
+          </div>
+        </div>
+
+        {resumeUploadSuccess && (
+          <div className="flex items-center gap-2 rounded-2xl bg-emerald-50 p-3.5 text-xs text-emerald-800 border border-emerald-200">
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+            <span>{resumeUploadSuccess}</span>
+          </div>
+        )}
+
+        {resumeUploadError && (
+          <div className="flex items-center gap-2 rounded-2xl bg-red-50 p-3.5 text-xs text-red-700 border border-red-200">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>{resumeUploadError}</span>
+          </div>
+        )}
+
+        <div className="rounded-2xl border border-[#edf2f7] bg-[#f8fafc] p-5">
+          {candidate?.resumeBase64 ? (
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white border border-[#edf2f7] text-[#84b81b] shadow-xs">
+                  <FileText className="h-6 w-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm text-[#0e1017]">
+                      {candidate.resumeOriginalName || 'My_Resume.pdf'}
+                    </span>
+                    <span className="rounded-full bg-[#edf7d2] px-2 py-0.5 text-[10px] font-bold text-[#567715]">
+                      Stored Securely
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#5e6b7c] mt-0.5">
+                    {candidate.resumeSizeBytes ? `${(candidate.resumeSizeBytes / 1024).toFixed(0)} KB • ` : ''}
+                    Uploaded {candidate.resumeUploadedAt ? new Date(candidate.resumeUploadedAt).toLocaleDateString() : 'Recently'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleDownloadResume(candidate._id)}
+                  className="flex items-center gap-1.5 rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-[#0e1017] hover:bg-slate-50 transition-all shadow-xs"
+                >
+                  <Download className="h-3.5 w-3.5 text-[#84b81b]" />
+                  <span>View / Download PDF</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="py-4 text-center space-y-2">
+              <p className="text-xs font-semibold text-[#5e6b7c]">
+                No PDF resume uploaded yet. Attach your resume to unlock real-time AI skill extraction and higher ATS scores.
+              </p>
+            </div>
+          )}
+
+          {/* Parsed Skills Catalog */}
+          {candidate?.skills && candidate.skills.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-[#edf2f7]">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#8b98a9] block mb-2">
+                Parsed Skills Extracted by AI ({candidate.skills.length})
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {candidate.skills.map((skill: string, idx: number) => (
+                  <span
+                    key={idx}
+                    className="rounded-full bg-white border border-[#edf2f7] px-2.5 py-1 text-[11px] font-medium text-[#0e1017] shadow-2xs"
+                  >
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* 5. Applications Pipeline Trackers */}
       <div className="rounded-3xl border border-[#edf2f7] bg-white p-6 shadow-sm space-y-4">

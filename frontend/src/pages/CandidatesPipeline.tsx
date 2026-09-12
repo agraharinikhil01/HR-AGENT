@@ -16,6 +16,9 @@ import {
   Clock,
   IndianRupee,
   CheckCircle2,
+  FileText,
+  Star,
+  ExternalLink,
 } from 'lucide-react';
 
 const KANBAN_STAGES = [
@@ -97,6 +100,28 @@ export const CandidatesPipeline: React.FC = () => {
       );
     } catch (err) {
       console.error('Failed to update stage:', err);
+    }
+  };
+
+  const handlePickBest = async (applicationId: string) => {
+    try {
+      await client.post(`/candidates/applications/${applicationId}/pick-best`);
+      await fetchData();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to shortlist candidate');
+    }
+  };
+
+  const handleDownloadResume = async (candidateId: string) => {
+    try {
+      const res = await client.get(`/candidates/${candidateId}/resume`, {
+        responseType: 'blob',
+      });
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (err: any) {
+      alert('Could not view resume. Please verify a PDF has been uploaded.');
     }
   };
 
@@ -250,6 +275,97 @@ export const CandidatesPipeline: React.FC = () => {
         </div>
       </div>
 
+      {/* ⭐ Top AI ATS Match / Recommendation Banner */}
+      {(() => {
+        const topCandidateApp =
+          applications && applications.length > 0
+            ? [...applications].sort((a, b) => b.fitScore - a.fitScore)[0]
+            : null;
+
+        if (!topCandidateApp) return null;
+
+        return (
+          <div className="relative overflow-hidden rounded-3xl bg-[#0e1017] p-6 text-white shadow-md border border-slate-800">
+            <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-[#84b81b]/15 blur-2xl pointer-events-none" />
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 relative z-10">
+              <div className="flex items-center gap-4">
+                <div className="relative h-14 w-14 shrink-0 rounded-2xl bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center shadow-inner">
+                  <img
+                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${topCandidateApp.candidateId?.fullName || 'Candidate'}`}
+                    alt={topCandidateApp.candidateId?.fullName}
+                    className="h-full w-full object-cover"
+                  />
+                  <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#84b81b] text-white text-[9px] font-black">
+                    ★
+                  </span>
+                </div>
+
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-[#84b81b] px-2.5 py-0.5 text-[10px] font-black text-white uppercase tracking-wide">
+                      TOP AI ATS MATCH ({topCandidateApp.fitScore}%)
+                    </span>
+                    <span className="text-xs text-slate-400">
+                      Target: <strong>{topCandidateApp.jobId?.title || 'Open Role'}</strong>
+                    </span>
+                    <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-300">
+                      Stage: {topCandidateApp.stage}
+                    </span>
+                  </div>
+
+                  <h3 className="text-lg font-black text-white mt-1">
+                    {topCandidateApp.candidateId?.fullName || 'Top Candidate'}
+                  </h3>
+                  <p className="text-xs text-slate-300 mt-0.5">
+                    {topCandidateApp.candidateId?.currentDesignation || 'Candidate'} • {topCandidateApp.candidateId?.totalExperienceYears || 0} yrs exp • Notice: {topCandidateApp.candidateId?.noticePeriodDays || 30} days
+                  </p>
+
+                  {topCandidateApp.candidateId?.skills && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {topCandidateApp.candidateId.skills.slice(0, 5).map((sk: string) => (
+                        <span key={sk} className="rounded-md bg-slate-800 border border-slate-700 px-2 py-0.5 text-[10px] font-medium text-slate-200">
+                          {sk}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                {topCandidateApp.candidateId?.resumeBase64 && (
+                  <button
+                    onClick={() => handleDownloadResume(topCandidateApp.candidateId._id)}
+                    className="flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-800/80 px-4 py-2 text-xs font-bold text-white hover:bg-slate-700 transition-all shadow-xs"
+                  >
+                    <FileText className="h-3.5 w-3.5 text-[#84b81b]" />
+                    <span>View PDF Resume</span>
+                  </button>
+                )}
+
+                {topCandidateApp.stage !== 'Shortlisted' && topCandidateApp.stage !== 'Offer Accepted' && (
+                  <button
+                    onClick={() => handlePickBest(topCandidateApp._id)}
+                    className="flex items-center gap-2 rounded-full bg-[#84b81b] px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#729e18] transition-all"
+                  >
+                    <Star className="h-4 w-4 fill-white" />
+                    <span>Pick / Shortlist Best Candidate</span>
+                  </button>
+                )}
+
+                <Link
+                  to={`/candidates/${topCandidateApp._id}`}
+                  className="flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-900 px-4 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800 transition-all"
+                >
+                  <span>Full Profile</span>
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Kanban Board Columns */}
       <div className="flex gap-4 overflow-x-auto pb-6">
         {KANBAN_STAGES.map((stage) => {
@@ -290,9 +406,26 @@ export const CandidatesPipeline: React.FC = () => {
                       >
                         {/* Top: Score pill & Compare checkbox */}
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1 rounded-full bg-[#edf7d2] px-2.5 py-0.5 text-[10px] font-black text-[#567715]">
-                            <Sparkles className="h-3 w-3 text-[#84b81b]" />
-                            <span>{app.fitScore}% Fit</span>
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1 rounded-full bg-[#edf7d2] px-2.5 py-0.5 text-[10px] font-black text-[#567715]">
+                              <Sparkles className="h-3 w-3 text-[#84b81b]" />
+                              <span>{app.fitScore}% Fit</span>
+                            </div>
+
+                            {candidate?.resumeBase64 && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDownloadResume(candidate._id);
+                                }}
+                                title="View PDF Resume"
+                                className="flex items-center gap-1 rounded-full bg-slate-100 hover:bg-[#84b81b] hover:text-white px-2 py-0.5 text-[9px] font-bold text-slate-700 transition-colors shadow-2xs"
+                              >
+                                <FileText className="h-3 w-3" />
+                                <span>PDF</span>
+                              </button>
+                            )}
                           </div>
 
                           <label className="flex items-center gap-1 text-[10px] font-semibold text-[#8b98a9] cursor-pointer">
@@ -349,9 +482,22 @@ export const CandidatesPipeline: React.FC = () => {
                           ))}
                         </div>
 
-                        {/* Stage Mover */}
-                        <div className="mt-3 flex items-center justify-between border-t border-[#edf2f7] pt-2 text-[11px]">
-                          <span className="text-[10px] font-bold text-[#8b98a9] uppercase">Move:</span>
+                        {/* Stage Mover & Pick Best */}
+                        <div className="mt-3 flex items-center justify-between border-t border-[#edf2f7] pt-2 text-[11px] gap-1.5">
+                          {app.stage !== 'Shortlisted' && app.stage !== 'Offer Accepted' ? (
+                            <button
+                              type="button"
+                              onClick={() => handlePickBest(app._id)}
+                              title="Shortlist this candidate as top match"
+                              className="flex items-center gap-1 rounded-md bg-[#edf7d2] hover:bg-[#84b81b] hover:text-white px-2 py-1 text-[10px] font-bold text-[#567715] transition-all"
+                            >
+                              <Star className="h-3 w-3 fill-current" />
+                              <span>Pick Best</span>
+                            </button>
+                          ) : (
+                            <span className="text-[10px] font-bold text-[#8b98a9] uppercase">Move:</span>
+                          )}
+
                           <select
                             value={app.stage}
                             onChange={(e) => handleStageChange(app._id, e.target.value)}

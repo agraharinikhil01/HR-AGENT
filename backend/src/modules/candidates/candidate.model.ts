@@ -23,6 +23,10 @@ export interface ICandidate extends Document {
   portfolioUrl?: string;
   resumeUrl?: string;
   resumeOriginalName?: string;
+  resumeBase64?: string;
+  resumeMimeType?: string;
+  resumeSizeBytes?: number;
+  resumeUploadedAt?: Date;
   parsedText?: string;
   source: 'PUBLIC_APPLICATION' | 'DIRECT_UPLOAD' | 'BULK_UPLOAD' | 'REFERRAL' | 'AGENCY';
   duplicateFlags: Array<{
@@ -59,6 +63,10 @@ const CandidateSchema = new Schema<ICandidate>(
     portfolioUrl: { type: String, trim: true },
     resumeUrl: { type: String },
     resumeOriginalName: { type: String },
+    resumeBase64: { type: String },
+    resumeMimeType: { type: String, default: 'application/pdf' },
+    resumeSizeBytes: { type: Number },
+    resumeUploadedAt: { type: Date },
     parsedText: { type: String },
     source: {
       type: String,

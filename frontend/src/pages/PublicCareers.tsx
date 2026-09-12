@@ -20,6 +20,8 @@ import {
   ExternalLink,
   ChevronRight,
   Filter,
+  FileText,
+  UploadCloud,
 } from 'lucide-react';
 
 export const PublicCareers: React.FC = () => {
@@ -38,6 +40,7 @@ export const PublicCareers: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
   const [applySuccess, setApplySuccess] = useState<any | null>(null);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
 
   // Application Form State
   const [formData, setFormData] = useState({
@@ -94,6 +97,7 @@ export const PublicCareers: React.FC = () => {
     setIsApplyModalOpen(true);
     setApplyError(null);
     setApplySuccess(null);
+    setResumeFile(null);
   };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -109,27 +113,55 @@ export const PublicCareers: React.FC = () => {
         .map((s) => s.trim())
         .filter(Boolean);
 
-      const payload = {
-        jobId: selectedJob._id,
-        fullName: formData.fullName.trim(),
-        email: formData.email.trim().toLowerCase(),
-        phone: formData.phone.trim(),
-        currentCity: formData.currentCity.trim(),
-        currentCompany: formData.currentCompany.trim(),
-        currentDesignation: formData.currentDesignation.trim(),
-        totalExperienceYears: Number(formData.totalExperienceYears),
-        expectedSalary: Number(formData.expectedSalary),
-        noticePeriodDays: Number(formData.noticePeriodDays),
-        skills,
-        education: [formData.educationText],
-        resumeText: formData.resumeText,
-        portfolioUrl: formData.portfolioUrl || undefined,
-        githubUrl: formData.githubUrl || undefined,
-        linkedInUrl: formData.linkedinUrl || undefined,
-        password: formData.password || undefined,
-      };
+      let res;
+      if (resumeFile) {
+        const payload = new FormData();
+        payload.append('resume', resumeFile);
+        payload.append('jobId', selectedJob._id);
+        payload.append('fullName', formData.fullName.trim());
+        payload.append('email', formData.email.trim().toLowerCase());
+        payload.append('phone', formData.phone.trim());
+        payload.append('currentCity', formData.currentCity.trim());
+        payload.append('currentCompany', formData.currentCompany.trim());
+        payload.append('currentDesignation', formData.currentDesignation.trim());
+        payload.append('totalExperienceYears', String(formData.totalExperienceYears));
+        payload.append('expectedSalary', String(formData.expectedSalary));
+        payload.append('noticePeriodDays', String(formData.noticePeriodDays));
+        payload.append('skills', JSON.stringify(skills));
+        payload.append('education', JSON.stringify([formData.educationText]));
+        payload.append('resumeText', formData.resumeText);
+        if (formData.portfolioUrl) payload.append('portfolioUrl', formData.portfolioUrl);
+        if (formData.githubUrl) payload.append('githubUrl', formData.githubUrl);
+        if (formData.linkedinUrl) payload.append('linkedInUrl', formData.linkedinUrl);
+        if (formData.password) payload.append('password', formData.password);
 
-      const res = await client.post('/candidates/public-apply', payload);
+        res = await client.post('/candidates/public-apply', payload, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      } else {
+        const payload = {
+          jobId: selectedJob._id,
+          fullName: formData.fullName.trim(),
+          email: formData.email.trim().toLowerCase(),
+          phone: formData.phone.trim(),
+          currentCity: formData.currentCity.trim(),
+          currentCompany: formData.currentCompany.trim(),
+          currentDesignation: formData.currentDesignation.trim(),
+          totalExperienceYears: Number(formData.totalExperienceYears),
+          expectedSalary: Number(formData.expectedSalary),
+          noticePeriodDays: Number(formData.noticePeriodDays),
+          skills,
+          education: [formData.educationText],
+          resumeText: formData.resumeText,
+          portfolioUrl: formData.portfolioUrl || undefined,
+          githubUrl: formData.githubUrl || undefined,
+          linkedInUrl: formData.linkedinUrl || undefined,
+          password: formData.password || undefined,
+        };
+
+        res = await client.post('/candidates/public-apply', payload);
+      }
+
       const { accessToken, user: newUser, organization } = res.data.data;
 
       // If account was created and token returned, auto log in
@@ -139,7 +171,7 @@ export const PublicCareers: React.FC = () => {
 
       setApplySuccess(res.data.data);
     } catch (err: any) {
-      setApplyError(err.response?.data?.error?.message || 'Failed to submit application. Please try again.');
+      setApplyError(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to submit application. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -344,10 +376,16 @@ export const PublicCareers: React.FC = () => {
           <div className="w-full max-w-2xl rounded-3xl bg-white p-6 sm:p-8 shadow-2xl border border-[#edf2f7] my-8 max-h-[90vh] overflow-y-auto">
             {applySuccess ? (
               <div className="text-center py-8 space-y-4">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#edf7d2] text-[#84b81b]">
-                  <CheckCircle2 className="h-8 w-8 stroke-[2.5]" />
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#edf7d2] text-[#84b81b]">
+                  <CheckCircle2 className="h-8 w-8" />
                 </div>
                 <h3 className="text-xl font-black text-[#0e1017]">Application Submitted Successfully!</h3>
+                {applySuccess?.application?.fitScore !== undefined && (
+                  <div className="inline-flex items-center gap-2 rounded-full bg-[#edf7d2] px-4 py-1.5 border border-[#84b81b]/30 text-xs font-bold text-[#567715]">
+                    <Sparkles className="h-4 w-4 text-[#84b81b]" />
+                    <span>AI ATS Match Score: {applySuccess.application.fitScore}%</span>
+                  </div>
+                )}
                 <p className="text-xs text-[#5e6b7c] max-w-md mx-auto leading-relaxed">
                   Thank you, <strong>{formData.fullName}</strong>. Your profile has been sent to the recruiting team for <strong>{selectedJob.title}</strong>. An email confirmation has been dispatched.
                 </p>
@@ -508,6 +546,65 @@ export const PublicCareers: React.FC = () => {
                         placeholder="https://github.com/username"
                         className="mt-1 w-full rounded-xl border border-[#edf2f7] bg-[#f8fafc] p-2.5 font-medium focus:border-[#84b81b] focus:bg-white focus:outline-none"
                       />
+                    </div>
+                  </div>
+
+                  {/* PDF Resume Upload */}
+                  <div className="rounded-2xl border-2 border-dashed border-[#84b81b]/40 bg-[#edf7d2]/30 p-4 transition-all hover:bg-[#edf7d2]/50">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#84b81b] text-white shadow-xs">
+                          <FileText className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-[#0e1017] text-xs">Upload Resume / CV (PDF)</span>
+                            <span className="rounded bg-[#84b81b] text-white px-1.5 py-0.5 text-[9px] font-black tracking-wide">AI ATS PARSER</span>
+                          </div>
+                          <p className="text-[11px] text-[#5e6b7c]">
+                            {resumeFile
+                              ? `${resumeFile.name} (${(resumeFile.size / 1024).toFixed(0)} KB)`
+                              : 'Upload PDF to enable instant AI ATS scoring & automatic skill extraction'}
+                          </p>
+                        </div>
+                      </div>
+                      <div>
+                        {resumeFile ? (
+                          <button
+                            type="button"
+                            onClick={() => setResumeFile(null)}
+                            className="flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-[11px] font-bold text-red-600 hover:bg-red-100"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                            Remove
+                          </button>
+                        ) : (
+                          <label className="cursor-pointer inline-flex items-center gap-1.5 rounded-xl bg-[#84b81b] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#729e18] transition-all">
+                            <UploadCloud className="h-3.5 w-3.5" />
+                            <span>Select PDF</span>
+                            <input
+                              type="file"
+                              accept=".pdf,application/pdf"
+                              className="hidden"
+                              onChange={(e) => {
+                                if (e.target.files && e.target.files[0]) {
+                                  const file = e.target.files[0];
+                                  if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+                                    setApplyError('Only PDF documents are accepted for resume upload');
+                                    return;
+                                  }
+                                  if (file.size > 10 * 1024 * 1024) {
+                                    setApplyError('Resume file size cannot exceed 10MB');
+                                    return;
+                                  }
+                                  setResumeFile(file);
+                                  setApplyError(null);
+                                }
+                              }}
+                            />
+                          </label>
+                        )}
+                      </div>
                     </div>
                   </div>
 

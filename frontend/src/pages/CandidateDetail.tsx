@@ -17,6 +17,9 @@ import {
   Building2,
   UserCheck,
   Award,
+  FileText,
+  Star,
+  Download,
 } from 'lucide-react';
 
 export const CandidateDetail: React.FC = () => {
@@ -88,6 +91,29 @@ export const CandidateDetail: React.FC = () => {
     }
   };
 
+  const handleDownloadResume = async () => {
+    if (!application?.candidateId?._id) return;
+    try {
+      const res = await client.get(`/candidates/${application.candidateId._id}/resume`, {
+        responseType: 'blob',
+      });
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (err) {
+      alert('Could not view resume. Please verify a PDF has been uploaded.');
+    }
+  };
+
+  const handlePickBest = async () => {
+    try {
+      await client.post(`/candidates/applications/${id}/pick-best`);
+      fetchApplication();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to select candidate as best match');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex h-96 items-center justify-center">
@@ -154,6 +180,26 @@ export const CandidateDetail: React.FC = () => {
 
           {/* Action CTAs: Solid Lime Button matching Image 2 */}
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            {application.stage !== 'Shortlisted' && application.stage !== 'Offer Accepted' && (
+              <button
+                onClick={handlePickBest}
+                className="flex items-center gap-2 rounded-full bg-[#0e1017] px-6 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-slate-800 transition-colors"
+              >
+                <Star className="h-4 w-4 fill-[#84b81b] text-[#84b81b]" />
+                <span>Pick as Best Candidate</span>
+              </button>
+            )}
+
+            {candidate?.resumeBase64 && (
+              <button
+                onClick={handleDownloadResume}
+                className="flex items-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-[#0e1017] hover:bg-slate-50 transition-colors shadow-xs"
+              >
+                <FileText className="h-4 w-4 text-[#84b81b]" />
+                <span>View PDF Resume</span>
+              </button>
+            )}
+
             <button
               onClick={() => handleStageAdvance('Shortlisted')}
               className="flex items-center gap-2 rounded-full bg-[#84b81b] px-6 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#729e18] transition-colors"
@@ -219,6 +265,52 @@ export const CandidateDetail: React.FC = () => {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Left 2 Cols: Experience Timeline, Skills, Notes */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Uploaded Resume / CV (PDF) & AI Extraction */}
+          <div className="rounded-3xl border border-[#edf2f7] bg-white p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#edf2f7]">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#0e1017] flex items-center gap-2">
+                <FileText className="h-4 w-4 text-[#84b81b]" />
+                <span>Uploaded Resume / CV & Document Verification</span>
+              </h3>
+              <span className="rounded-full bg-[#edf7d2] px-2.5 py-0.5 text-[10px] font-bold text-[#567715]">
+                {candidate?.resumeBase64 ? 'PDF Attached' : 'Text Profile Only'}
+              </span>
+            </div>
+
+            {candidate?.resumeBase64 ? (
+              <div className="rounded-2xl border border-[#edf2f7] bg-[#f8fafc] p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white border border-[#edf2f7] text-[#84b81b] shadow-xs">
+                    <FileText className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-xs text-[#0e1017] block">
+                      {candidate.resumeOriginalName || 'Candidate_Resume.pdf'}
+                    </span>
+                    <span className="text-[11px] text-[#5e6b7c]">
+                      {candidate.resumeSizeBytes ? `${(candidate.resumeSizeBytes / 1024).toFixed(0)} KB • ` : ''}
+                      Stored in MongoDB Atlas • Uploaded {candidate.resumeUploadedAt ? new Date(candidate.resumeUploadedAt).toLocaleDateString() : 'Recently'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleDownloadResume}
+                    className="flex items-center gap-1.5 rounded-full bg-[#84b81b] px-4 py-2 text-xs font-bold text-white hover:bg-[#729e18] transition-all shadow-xs"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    <span>View / Download PDF</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-[#f8fafc] p-4 text-center text-xs text-[#8b98a9]">
+                Candidate applied using digital form without an attached PDF document.
+              </div>
+            )}
+          </div>
+
           {/* Skills & Proficiencies (Image 2 style: light lime tint pills) */}
           <div className="rounded-3xl border border-[#edf2f7] bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between pb-3 border-b border-[#edf2f7]">

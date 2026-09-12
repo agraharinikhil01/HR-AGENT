@@ -34,11 +34,40 @@ export const publicApplySchema = z.object({
   currentCity: z.string().optional(),
   currentCompany: z.string().optional(),
   currentDesignation: z.string().optional(),
-  totalExperienceYears: z.number().nonnegative().default(0),
-  expectedSalary: z.number().nonnegative().optional(),
-  noticePeriodDays: z.number().int().nonnegative().default(30),
-  skills: z.array(z.string()).default([]),
-  education: z.array(z.string()).default([]),
+  totalExperienceYears: z.preprocess(
+    (val) => (val !== undefined && val !== null && val !== '' ? Number(val) : 0),
+    z.number().nonnegative().default(0)
+  ),
+  expectedSalary: z.preprocess(
+    (val) => (val !== undefined && val !== null && val !== '' ? Number(val) : undefined),
+    z.number().nonnegative().optional()
+  ),
+  noticePeriodDays: z.preprocess(
+    (val) => (val !== undefined && val !== null && val !== '' ? Number(val) : 30),
+    z.number().int().nonnegative().default(30)
+  ),
+  skills: z.preprocess((val) => {
+    if (typeof val === 'string') {
+      try {
+        const parsed = JSON.parse(val);
+        if (Array.isArray(parsed)) return parsed;
+      } catch {
+        return val.split(',').map((s: string) => s.trim()).filter(Boolean);
+      }
+    }
+    return val || [];
+  }, z.array(z.string()).default([])),
+  education: z.preprocess((val) => {
+    if (typeof val === 'string') {
+      try {
+        const parsed = JSON.parse(val);
+        if (Array.isArray(parsed)) return parsed;
+      } catch {
+        return val.split(',').map((s: string) => s.trim()).filter(Boolean);
+      }
+    }
+    return val || [];
+  }, z.array(z.string()).default([])),
   linkedInUrl: z.string().optional(),
   githubUrl: z.string().optional(),
   portfolioUrl: z.string().optional(),

@@ -11,6 +11,7 @@ import { Offer } from '../offers/offer.model.js';
 import { NotFoundError } from '../../utils/ownershipCheck.js';
 import { signAccessToken } from '../../utils/jwt.js';
 import { sendEmail } from '../../services/email.service.js';
+import { parsePdfResume } from '../../utils/resumeParser.js';
 
 export class CandidateController {
   static async createCandidate(req: Request, res: Response, next: NextFunction) {
@@ -58,11 +59,28 @@ export class CandidateController {
 
       if (!org) throw new NotFoundError('Company organization not found');
 
+      // Process uploaded PDF resume if present
+      let resumeData: any = {};
+      if (req.file) {
+        const resumeBase64 = `data:${req.file.mimetype || 'application/pdf'};base64,${req.file.buffer.toString('base64')}`;
+        const parsed = await parsePdfResume(req.file.buffer);
+        resumeData = {
+          resumeBase64,
+          resumeOriginalName: req.file.originalname,
+          resumeMimeType: req.file.mimetype || 'application/pdf',
+          resumeSizeBytes: req.file.size,
+          parsedText: parsed.text,
+          extractedSkills: parsed.extractedSkills,
+          estimatedExperienceYears: parsed.estimatedExperienceYears,
+        };
+      }
+
       // Create candidate & application
       const result = await CandidateService.createCandidateWithApplication(
         org._id.toString(),
         {
           ...req.body,
+          ...resumeData,
           jobId: job._id.toString(),
           source: 'PUBLIC_APPLICATION',
         }
@@ -338,6 +356,109 @@ export class CandidateController {
       });
 
       res.json({ success: true, data: offer });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async uploadCandidateResume(req: Request, res: Response, next: NextFunction) {
+    try {
+      if (!req.file) {
+        res.status(400).json({ success: false, message: 'PDF file is required' });
+        return;
+      }
+
+      const user = req.user!;
+      let candidate = await Candidate.findOne({ email: user.email.toLowerCase(), isDeleted: false });
+      if (!candidate) {
+        candidate = await Candidate.create({
+          orgId: user.orgId,
+          fullName: user.name,
+          email: user.email.toLowerCase(),
+          skills: [],
+          totalExperienceYears: 0,
+        });
+      }
+
+      const parsed = await parsePdfResume(req.file.buffer);
+      const resumeBase64 = `data:${req.file.mimetype || 'application/pdf'};base64,${req.file.buffer.toString('base64')}`;
+
+      const updatedCandidate = await CandidateService.updateCandidateResume(
+        candidate._id.toString(),
+        {
+          base64: resumeBase64,
+          originalName: req.file.originalname,
+          mimeType: req.file.mimetype || 'application/pdf',
+          sizeBytes: req.file.size,
+          parsedText: parsed.text,
+          extractedSkills: parsed.extractedSkills,
+          estimatedExperienceYears: parsed.estimatedExperienceYears,
+        }
+      );
+
+      res.json({
+        success: true,
+        data: {
+          message: 'Resume uploaded and ATS profile updated successfully',
+          candidate: updatedCandidate,
+          extractedSkills: parsed.extractedSkills,
+          estimatedExperienceYears: parsed.estimatedExperienceYears,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async downloadResume(req: Request, res: Response, next: NextFunction) {
+    try {
+      const candidateId = String(req.params.id);
+      const candidate = await Candidate.findById(candidateId);
+      if (!candidate || !candidate.resumeBase64) {
+        res.status(404).json({ success: false, message: 'No PDF resume found for this candidate' });
+        return;
+      }
+
+      // Format: data:<mime>;base64,<payload>
+      const matches = candidate.resumeBase64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      let buffer: Buffer;
+      let mimeType = candidate.resumeMimeType || 'application/pdf';
+
+      if (matches && matches.length === 3) {
+        mimeType = matches[1];
+        buffer = Buffer.from(matches[2], 'base64');
+      } else {
+        buffer = Buffer.from(candidate.resumeBase64, 'base64');
+      }
+
+      const filename = candidate.resumeOriginalName || `${candidate.fullName.replace(/[^a-zA-Z0-9]/g, '_')}_Resume.pdf`;
+
+      res.setHeader('Content-Type', mimeType);
+      res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+      res.setHeader('Content-Length', buffer.length);
+      res.send(buffer);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async pickBestCandidate(req: Request, res: Response, next: NextFunction) {
+    try {
+      const applicationId = String(req.params.id);
+      const application = await CandidateService.pickBestCandidate(
+        req.user!.orgId,
+        applicationId,
+        {
+          id: req.user!._id,
+          name: req.user!.name,
+          ip: req.ip,
+        }
+      );
+      res.json({
+        success: true,
+        message: 'Candidate selected as top recommendation and shortlisted!',
+        data: application,
+      });
     } catch (error) {
       next(error);
     }

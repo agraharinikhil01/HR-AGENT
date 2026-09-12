@@ -32,6 +32,7 @@ import {
   Lightbulb,
   TrendingUp,
 } from 'lucide-react';
+import { SkillRadarMatrix } from '../components/SkillRadarMatrix.js';
 
 const PIPELINE_STAGES = [
   'Applied',
@@ -798,6 +799,17 @@ export const CandidateDashboard: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* 4.5. 360° Visual Skill Radar Match Matrix & Gap Heatmap */}
+      {candidate?.skills && candidate.skills.length > 0 && (
+        <SkillRadarMatrix
+          candidateSkills={candidate?.skills || []}
+          jobMandatorySkills={applications[0]?.jobId?.mandatorySkills || []}
+          jobPreferredSkills={applications[0]?.jobId?.preferredSkills || []}
+          jobTitle={applications[0]?.jobId?.title || 'Target Engineering Role'}
+          candidateName={candidate?.fullName || 'My Profile'}
+        />
+      )}
 
       {/* 5. Applications Pipeline Trackers */}
       <div className="rounded-3xl border border-[#edf2f7] bg-white p-6 shadow-sm space-y-4">

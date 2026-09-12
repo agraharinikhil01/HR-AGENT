@@ -24,6 +24,7 @@ import {
   ShieldCheck,
   Lightbulb,
 } from 'lucide-react';
+import { SkillRadarMatrix } from '../components/SkillRadarMatrix.js';
 
 export const CandidateDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -440,6 +441,15 @@ export const CandidateDetail: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* 360° Visual Skill Radar Match Matrix & Gap Heatmap */}
+          <SkillRadarMatrix
+            candidateSkills={candidate?.skills || []}
+            jobMandatorySkills={job?.mandatorySkills || []}
+            jobPreferredSkills={job?.preferredSkills || []}
+            jobTitle={job?.title || 'Role Requisition'}
+            candidateName={candidate?.fullName || 'Candidate'}
+          />
 
           {/* Skills & Proficiencies (Image 2 style: light lime tint pills) */}
           <div className="rounded-3xl border border-[#edf2f7] bg-white p-6 shadow-sm">

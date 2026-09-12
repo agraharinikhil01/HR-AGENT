@@ -28,6 +28,16 @@ export interface ICandidate extends Document {
   resumeSizeBytes?: number;
   resumeUploadedAt?: Date;
   parsedText?: string;
+  atsScore?: number;
+  atsGrade?: string;
+  atsBreakdown?: {
+    skillsScore: number;
+    experienceScore: number;
+    contactScore: number;
+    formattingScore: number;
+  };
+  atsStrengths?: string[];
+  atsImprovements?: string[];
   source: 'PUBLIC_APPLICATION' | 'DIRECT_UPLOAD' | 'BULK_UPLOAD' | 'REFERRAL' | 'AGENCY';
   duplicateFlags: Array<{
     candidateId: mongoose.Types.ObjectId;
@@ -68,6 +78,16 @@ const CandidateSchema = new Schema<ICandidate>(
     resumeSizeBytes: { type: Number },
     resumeUploadedAt: { type: Date },
     parsedText: { type: String },
+    atsScore: { type: Number, default: 0 },
+    atsGrade: { type: String, default: 'A' },
+    atsBreakdown: {
+      skillsScore: { type: Number, default: 0 },
+      experienceScore: { type: Number, default: 0 },
+      contactScore: { type: Number, default: 0 },
+      formattingScore: { type: Number, default: 0 },
+    },
+    atsStrengths: [{ type: String }],
+    atsImprovements: [{ type: String }],
     source: {
       type: String,
       enum: ['PUBLIC_APPLICATION', 'DIRECT_UPLOAD', 'BULK_UPLOAD', 'REFERRAL', 'AGENCY'],

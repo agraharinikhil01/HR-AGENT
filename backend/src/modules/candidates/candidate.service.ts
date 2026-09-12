@@ -64,6 +64,13 @@ export class CandidateService {
         candidate.resumeUploadedAt = new Date();
       }
       if (data.parsedText) candidate.parsedText = data.parsedText;
+      if (data.atsEvaluation) {
+        candidate.atsScore = data.atsEvaluation.overallScore;
+        candidate.atsGrade = data.atsEvaluation.grade;
+        candidate.atsBreakdown = data.atsEvaluation.categoryScores;
+        candidate.atsStrengths = data.atsEvaluation.strengths;
+        candidate.atsImprovements = data.atsEvaluation.improvements;
+      }
       await candidate.save();
     } else {
       // Check phone or name duplicates to flag
@@ -97,6 +104,16 @@ export class CandidateService {
         resumeSizeBytes: data.resumeSizeBytes,
         resumeUploadedAt: data.resumeBase64 ? new Date() : undefined,
         parsedText: data.parsedText,
+        atsScore: data.atsEvaluation?.overallScore || 0,
+        atsGrade: data.atsEvaluation?.grade || 'A',
+        atsBreakdown: data.atsEvaluation?.categoryScores || {
+          skillsScore: 0,
+          experienceScore: 0,
+          contactScore: 0,
+          formattingScore: 0,
+        },
+        atsStrengths: data.atsEvaluation?.strengths || [],
+        atsImprovements: data.atsEvaluation?.improvements || [],
         orgId: new mongoose.Types.ObjectId(orgId),
         duplicateFlags,
       });
@@ -202,6 +219,7 @@ export class CandidateService {
       parsedText?: string;
       extractedSkills?: string[];
       estimatedExperienceYears?: number;
+      atsEvaluation?: any;
     }
   ) {
     const candidate = await Candidate.findById(candidateId);
@@ -220,6 +238,14 @@ export class CandidateService {
       candidate.skills = Array.from(
         new Set([...(candidate.skills || []), ...resumeData.extractedSkills])
       );
+    }
+
+    if (resumeData.atsEvaluation) {
+      candidate.atsScore = resumeData.atsEvaluation.overallScore;
+      candidate.atsGrade = resumeData.atsEvaluation.grade;
+      candidate.atsBreakdown = resumeData.atsEvaluation.categoryScores;
+      candidate.atsStrengths = resumeData.atsEvaluation.strengths;
+      candidate.atsImprovements = resumeData.atsEvaluation.improvements;
     }
 
     if (

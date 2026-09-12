@@ -72,6 +72,7 @@ export class CandidateController {
           parsedText: parsed.text,
           extractedSkills: parsed.extractedSkills,
           estimatedExperienceYears: parsed.estimatedExperienceYears,
+          atsEvaluation: parsed.atsEvaluation,
         };
       }
 
@@ -283,6 +284,25 @@ export class CandidateController {
         });
       }
 
+      // Auto compute genuine ATS Score if resume is uploaded or skills present
+      if (!candidate.atsScore || candidate.atsScore === 0) {
+        const { evaluateResumeAts } = await import('../../utils/resumeParser.js');
+        const evalResult = evaluateResumeAts({
+          text: candidate.parsedText || (candidate.skills || []).join(' '),
+          skills: candidate.skills || [],
+          experienceYears: candidate.totalExperienceYears || 0,
+          email: candidate.email,
+          phone: candidate.phone,
+        });
+
+        candidate.atsScore = evalResult.overallScore;
+        candidate.atsGrade = evalResult.grade;
+        candidate.atsBreakdown = evalResult.categoryScores;
+        candidate.atsStrengths = evalResult.strengths;
+        candidate.atsImprovements = evalResult.improvements;
+        await candidate.save();
+      }
+
       // 1. Applications with jobs
       const applications = await Application.find({
         candidateId: candidate._id,
@@ -393,6 +413,7 @@ export class CandidateController {
           parsedText: parsed.text,
           extractedSkills: parsed.extractedSkills,
           estimatedExperienceYears: parsed.estimatedExperienceYears,
+          atsEvaluation: parsed.atsEvaluation,
         }
       );
 
@@ -403,6 +424,7 @@ export class CandidateController {
           candidate: updatedCandidate,
           extractedSkills: parsed.extractedSkills,
           estimatedExperienceYears: parsed.estimatedExperienceYears,
+          atsEvaluation: parsed.atsEvaluation,
         },
       });
     } catch (error) {

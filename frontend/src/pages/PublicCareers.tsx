@@ -432,6 +432,72 @@ export const PublicCareers: React.FC = () => {
                 )}
 
                 <form onSubmit={handleFormSubmit} className="mt-5 space-y-4 text-xs">
+                  {/* ⭐ PRIMARY PDF RESUME UPLOADER AT THE VERY TOP */}
+                  <div className="rounded-2xl border-2 border-dashed border-[#84b81b] bg-[#edf7d2]/40 p-4 transition-all hover:bg-[#edf7d2]/60 shadow-xs">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#84b81b] text-white shadow-xs">
+                          <FileText className="h-6 w-6" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-extrabold text-[#0e1017] text-sm">Attach Resume / CV (PDF)</span>
+                            <span className="rounded bg-[#84b81b] text-white px-2 py-0.5 text-[9px] font-black tracking-wide">
+                              AI ATS PARSER
+                            </span>
+                          </div>
+                          <p className="text-xs text-[#5e6b7c] mt-0.5">
+                            {resumeFile ? (
+                              <span className="font-bold text-[#567715]">
+                                ✓ {resumeFile.name} ({(resumeFile.size / 1024).toFixed(0)} KB) attached
+                              </span>
+                            ) : (
+                              'Upload your PDF resume to automatically calculate your ATS Match Score for recruiters'
+                            )}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="shrink-0">
+                        {resumeFile ? (
+                          <button
+                            type="button"
+                            onClick={() => setResumeFile(null)}
+                            className="flex items-center gap-1.5 rounded-xl border border-red-200 bg-white px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 shadow-2xs"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                            <span>Remove</span>
+                          </button>
+                        ) : (
+                          <label className="cursor-pointer inline-flex items-center gap-2 rounded-xl bg-[#84b81b] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#729e18] transition-all">
+                            <UploadCloud className="h-4 w-4" />
+                            <span>Upload PDF</span>
+                            <input
+                              type="file"
+                              accept=".pdf,application/pdf"
+                              className="hidden"
+                              onChange={(e) => {
+                                if (e.target.files && e.target.files[0]) {
+                                  const file = e.target.files[0];
+                                  if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+                                    setApplyError('Only PDF documents are accepted for resume upload');
+                                    return;
+                                  }
+                                  if (file.size > 10 * 1024 * 1024) {
+                                    setApplyError('Resume file size cannot exceed 10MB');
+                                    return;
+                                  }
+                                  setResumeFile(file);
+                                  setApplyError(null);
+                                }
+                              }}
+                            />
+                          </label>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Personal Info */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -546,65 +612,6 @@ export const PublicCareers: React.FC = () => {
                         placeholder="https://github.com/username"
                         className="mt-1 w-full rounded-xl border border-[#edf2f7] bg-[#f8fafc] p-2.5 font-medium focus:border-[#84b81b] focus:bg-white focus:outline-none"
                       />
-                    </div>
-                  </div>
-
-                  {/* PDF Resume Upload */}
-                  <div className="rounded-2xl border-2 border-dashed border-[#84b81b]/40 bg-[#edf7d2]/30 p-4 transition-all hover:bg-[#edf7d2]/50">
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#84b81b] text-white shadow-xs">
-                          <FileText className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-[#0e1017] text-xs">Upload Resume / CV (PDF)</span>
-                            <span className="rounded bg-[#84b81b] text-white px-1.5 py-0.5 text-[9px] font-black tracking-wide">AI ATS PARSER</span>
-                          </div>
-                          <p className="text-[11px] text-[#5e6b7c]">
-                            {resumeFile
-                              ? `${resumeFile.name} (${(resumeFile.size / 1024).toFixed(0)} KB)`
-                              : 'Upload PDF to enable instant AI ATS scoring & automatic skill extraction'}
-                          </p>
-                        </div>
-                      </div>
-                      <div>
-                        {resumeFile ? (
-                          <button
-                            type="button"
-                            onClick={() => setResumeFile(null)}
-                            className="flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-[11px] font-bold text-red-600 hover:bg-red-100"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                            Remove
-                          </button>
-                        ) : (
-                          <label className="cursor-pointer inline-flex items-center gap-1.5 rounded-xl bg-[#84b81b] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#729e18] transition-all">
-                            <UploadCloud className="h-3.5 w-3.5" />
-                            <span>Select PDF</span>
-                            <input
-                              type="file"
-                              accept=".pdf,application/pdf"
-                              className="hidden"
-                              onChange={(e) => {
-                                if (e.target.files && e.target.files[0]) {
-                                  const file = e.target.files[0];
-                                  if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
-                                    setApplyError('Only PDF documents are accepted for resume upload');
-                                    return;
-                                  }
-                                  if (file.size > 10 * 1024 * 1024) {
-                                    setApplyError('Resume file size cannot exceed 10MB');
-                                    return;
-                                  }
-                                  setResumeFile(file);
-                                  setApplyError(null);
-                                }
-                              }}
-                            />
-                          </label>
-                        )}
-                      </div>
                     </div>
                   </div>
 

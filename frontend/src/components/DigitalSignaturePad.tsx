@@ -26,16 +26,22 @@ export const DigitalSignaturePad: React.FC<DigitalSignaturePadProps> = ({
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      // Handle high DPI displays
+      // Handle high DPI displays with dimension fallbacks
       const dpr = window.devicePixelRatio || 1;
-      canvas.width = canvas.offsetWidth * dpr;
-      canvas.height = canvas.offsetHeight * dpr;
+      const w = canvas.offsetWidth || 400;
+      const h = canvas.offsetHeight || 128;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
       ctx.scale(dpr, dpr);
 
       ctx.strokeStyle = '#0f172a'; // Deep navy black
       ctx.lineWidth = 2.5;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
+
+      if (!hasDrawn) {
+        onSignatureChange('');
+      }
     }
   }, [signMode]);
 
@@ -64,6 +70,9 @@ export const DigitalSignaturePad: React.FC<DigitalSignaturePadProps> = ({
 
   // Mouse & Touch event handlers for drawing
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if ('touches' in e && e.cancelable) {
+      e.preventDefault();
+    }
     isDrawing.current = true;
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -80,6 +89,9 @@ export const DigitalSignaturePad: React.FC<DigitalSignaturePadProps> = ({
 
   const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (!isDrawing.current) return;
+    if ('touches' in e && e.cancelable) {
+      e.preventDefault();
+    }
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -110,6 +122,7 @@ export const DigitalSignaturePad: React.FC<DigitalSignaturePadProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.beginPath();
     setHasDrawn(false);
     onSignatureChange('');
   };

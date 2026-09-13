@@ -112,9 +112,16 @@ export const AiInterviewSimulator: React.FC = () => {
 
   const timerRef = useRef<any>(null);
   const recognitionRef = useRef<any>(null);
+  const isRecordingRef = useRef(false);
+  const baseTextRef = useRef('');
 
   const questions = DEFAULT_QUESTIONS[selectedRole] || DEFAULT_QUESTIONS.fullstack;
   const activeQuestion = questions[currentQIndex] || questions[0];
+
+  // Keep isRecordingRef in sync
+  useEffect(() => {
+    isRecordingRef.current = isRecording;
+  }, [isRecording]);
 
   // Speech Recognition setup (Web Speech API)
   useEffect(() => {
@@ -132,11 +139,25 @@ export const AiInterviewSimulator: React.FC = () => {
         for (let i = 0; i < event.results.length; i++) {
           transcript += event.results[i][0].transcript + ' ';
         }
-        setSpeechText(transcript.trim());
+        const combined = baseTextRef.current
+          ? `${baseTextRef.current} ${transcript.trim()}`
+          : transcript.trim();
+        setSpeechText(combined);
+      };
+
+      recognition.onend = () => {
+        // If user is still recording, automatically restart speech recognition
+        if (isRecordingRef.current) {
+          try {
+            recognition.start();
+          } catch (e) {
+            // Already started or busy
+          }
+        }
       };
 
       recognition.onerror = (err: any) => {
-        console.warn('Speech recognition warning:', err);
+        console.warn('Speech recognition status:', err);
       };
 
       recognitionRef.current = recognition;
@@ -144,10 +165,27 @@ export const AiInterviewSimulator: React.FC = () => {
 
     return () => {
       if (recognitionRef.current) {
-        recognitionRef.current.stop();
+        try {
+          recognitionRef.current.stop();
+        } catch (e) {}
       }
     };
   }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (recordedStream) {
+        recordedStream.getTracks().forEach((track) => track.stop());
+      }
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [recordedStream]);
 
   // Timer while recording
   useEffect(() => {
@@ -166,6 +204,7 @@ export const AiInterviewSimulator: React.FC = () => {
 
   // Start Mic & Recording
   const startRecording = async () => {
+    baseTextRef.current = speechText.trim();
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       setRecordedStream(stream);

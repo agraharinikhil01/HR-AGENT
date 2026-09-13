@@ -65,7 +65,14 @@ export const CtcDonutChart: React.FC<CtcDonutChartProps> = ({
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
 
-  let accumulatedPercent = 0;
+  let currentOffsetRatio = 0;
+  const renderedSegments = items.map((item) => {
+    const ratio = item.amount / safeTotal;
+    const strokeDasharray = `${ratio * circumference} ${circumference}`;
+    const strokeDashoffset = -(currentOffsetRatio * circumference);
+    currentOffsetRatio += ratio;
+    return { item, strokeDasharray, strokeDashoffset };
+  });
 
   return (
     <div className="rounded-2xl border border-[#edf2f7] bg-[#f8fafc] p-4 flex flex-col sm:flex-row items-center justify-between gap-6">
@@ -80,26 +87,20 @@ export const CtcDonutChart: React.FC<CtcDonutChartProps> = ({
             stroke="#e2e8f0"
             strokeWidth={strokeWidth}
           />
-          {items.map((item, idx) => {
-            const strokeDasharray = `${(item.percentage / 100) * circumference} ${circumference}`;
-            const strokeDashoffset = -((accumulatedPercent / 100) * circumference);
-            accumulatedPercent += item.percentage;
-
-            return (
-              <circle
-                key={idx}
-                cx={size / 2}
-                cy={size / 2}
-                r={radius}
-                fill="none"
-                stroke={item.color}
-                strokeWidth={strokeWidth}
-                strokeDasharray={strokeDasharray}
-                strokeDashoffset={strokeDashoffset}
-                className="transition-all duration-700 ease-out"
-              />
-            );
-          })}
+          {renderedSegments.map(({ item, strokeDasharray, strokeDashoffset }, idx) => (
+            <circle
+              key={idx}
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              fill="none"
+              stroke={item.color}
+              strokeWidth={strokeWidth}
+              strokeDasharray={strokeDasharray}
+              strokeDashoffset={strokeDashoffset}
+              className="transition-all duration-700 ease-out"
+            />
+          ))}
         </svg>
 
         {/* Center Label */}

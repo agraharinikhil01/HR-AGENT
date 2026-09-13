@@ -66,6 +66,12 @@ export function evaluateMockInterviewAnswer(input: MockEvaluationInput): MockEva
     'security', 'jwt', 'auth', 'event', 'kafka', 'queue', 'circuit breaker', 'throughput',
     'load balancer', 'state', 'redux', 'hook', 'component', 'props', 'dom', 'rendering',
     'algorithm', 'complexity', 'o(1)', 'o(n)', 'sharding', 'replication', 'consistency',
+    'typescript', 'react', 'node', 'express', 'css', 'html', 'next.js', 'virtual dom',
+    'hydration', 'bundle', 'webpack', 'vite', 'apollo', 'grpc', 'websocket', 'ci/cd',
+    'pipeline', 'github actions', 'jenkins', 'helm', 'ingress', 'istio', 'serverless',
+    'lambda', 's3', 'dynamo', 'iam', 'sqs', 'sns', 'distributed', 'horizontal scaling',
+    'reverse proxy', 'nginx', 'cdn', 'cloudflare', 'failover', 'idempotency', 'acid',
+    'cap theorem', 'deadlock', 'mutex', 'worker threads', 'profiling', 'benchmark',
   ];
 
   const STAR_KEYWORDS = [

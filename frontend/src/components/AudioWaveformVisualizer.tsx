@@ -72,9 +72,13 @@ export const AudioWaveformVisualizer: React.FC<AudioWaveformVisualizerProps> = (
         ctx.fillStyle = isRecording ? grad : '#cbd5e1';
         const y = (canvas.height - barHeight) / 2;
 
-        // Rounded bar
+        // Rounded bar with browser fallback
         ctx.beginPath();
-        ctx.roundRect(x, y, barWidth, barHeight, 4);
+        if (typeof (ctx as any).roundRect === 'function') {
+          (ctx as any).roundRect(x, y, barWidth, barHeight, 4);
+        } else {
+          ctx.rect(x, y, barWidth, barHeight);
+        }
         ctx.fill();
 
         x += barWidth + barGap;

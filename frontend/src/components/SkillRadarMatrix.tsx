@@ -117,13 +117,15 @@ export const SkillRadarMatrix: React.FC<SkillRadarMatrixProps> = ({
       (sk) => !lowerCandidateSkills.some((csk) => csk.includes(sk.toLowerCase()))
     );
 
-    // Candidate score in this category: based on matched count and required count
-    let candidateScore = 60;
-    if (requiredInCat.length > 0) {
+    // Candidate score in this category: based on verified skills and role requirements
+    let candidateScore = 20;
+    if (candidateSkills.length === 0) {
+      candidateScore = 10;
+    } else if (requiredInCat.length > 0) {
       const matchRatio = matchedAgainstJob.length / requiredInCat.length;
-      candidateScore = Math.min(100, Math.round(50 + matchRatio * 45 + (matchedInCat.length > requiredInCat.length ? 5 : 0)));
+      candidateScore = Math.min(100, Math.round(25 + matchRatio * 65 + (matchedInCat.length > requiredInCat.length ? 10 : 0)));
     } else {
-      candidateScore = Math.min(100, Math.max(50, 60 + matchedInCat.length * 10));
+      candidateScore = Math.min(100, Math.max(20, 30 + matchedInCat.length * 15));
     }
 
     const jobBenchmarkScore = requiredInCat.length > 0 ? 85 : 70;
@@ -199,7 +201,7 @@ export const SkillRadarMatrix: React.FC<SkillRadarMatrixProps> = ({
               <h3 className="text-sm font-black text-[#0e1017]">
                 360° Candidate Skill Match Matrix & Gap Heatmap
               </h3>
-              <span className="rounded-full bg-[#84b81b] text-white px-2 py-0.2 text-[9px] font-black uppercase">
+              <span className="rounded-full bg-[#84b81b] text-white px-2 py-0.5 text-[9px] font-black uppercase">
                 AI Powered
               </span>
             </div>

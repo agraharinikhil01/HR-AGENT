@@ -14,4 +14,8 @@ const apiBaseUrl = (rawApiUrl && rawApiUrl.startsWith('http') && !rawApiUrl.incl
 export const frontendEnv = {
   VITE_API_BASE_URL: apiBaseUrl,
   VITE_ENABLE_REAL_TIME: import.meta.env.VITE_ENABLE_REAL_TIME || 'true',
+  VITE_EMAILJS_PUBLIC_KEY: import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '0_XS4ZUAWQwaGFz5B',
+  VITE_EMAILJS_SERVICE_ID: import.meta.env.VITE_EMAILJS_SERVICE_ID || '',
+  VITE_EMAILJS_TEMPLATE_ID: import.meta.env.VITE_EMAILJS_TEMPLATE_ID || '',
+  VITE_GOOGLE_CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
 };

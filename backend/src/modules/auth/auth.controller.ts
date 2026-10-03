@@ -141,4 +141,71 @@ export class AuthController {
       next(error);
     }
   }
+
+  static async sendOtp(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email } = req.body;
+      const result = await AuthService.sendOtp(email, req.ip);
+      res.json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async verifyOtp(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await AuthService.verifyOtpAndLogin({
+        ...req.body,
+        ipAddress: req.ip,
+      });
+
+      res.cookie('refreshToken', result.refreshToken, {
+        httpOnly: true,
+        secure: env.NODE_ENV === 'production',
+        sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      res.json({
+        success: true,
+        data: {
+          user: result.user,
+          organization: result.organization,
+          accessToken: result.accessToken,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async googleLogin(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await AuthService.loginWithGoogle({
+        ...req.body,
+        ipAddress: req.ip,
+      });
+
+      res.cookie('refreshToken', result.refreshToken, {
+        httpOnly: true,
+        secure: env.NODE_ENV === 'production',
+        sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      res.json({
+        success: true,
+        data: {
+          user: result.user,
+          organization: result.organization,
+          accessToken: result.accessToken,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

@@ -21,18 +21,60 @@ export interface SendEmailOptions {
   text: string;
   html?: string;
   from?: string;
+  otp?: string;
 }
 
 export interface SendEmailResult {
   sent: boolean;
-  provider: 'resend' | 'smtp' | 'simulated';
+  provider: 'emailjs' | 'resend' | 'smtp' | 'simulated';
   error?: string;
 }
 
 export async function sendEmail(options: SendEmailOptions): Promise<SendEmailResult> {
   const sender = options.from || env.EMAIL_FROM || 'HireFlow AI <onboarding@resend.dev>';
 
-  // 1. Resend API Key priority (fastest, modern HTTP)
+  // 1. EmailJS REST API Priority (when service_id is configured or provided)
+  if (env.EMAILJS_PUBLIC_KEY && (env.EMAILJS_SERVICE_ID || env.EMAILJS_TEMPLATE_ID)) {
+    try {
+      const emailJsPayload = {
+        service_id: env.EMAILJS_SERVICE_ID || 'service_hireflow',
+        template_id: env.EMAILJS_TEMPLATE_ID || 'template_otp',
+        user_id: env.EMAILJS_PUBLIC_KEY,
+        accessToken: env.EMAILJS_PRIVATE_KEY,
+        template_params: {
+          to_email: options.to,
+          email: options.to,
+          recipient_email: options.to,
+          otp: options.otp || '',
+          passcode: options.otp || '',
+          subject: options.subject,
+          message: options.text,
+          company_name: 'HireFlow AI',
+        },
+      };
+
+      const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Origin': env.CLIENT_URL || 'https://hr-agent-steel.vercel.app',
+        },
+        body: JSON.stringify(emailJsPayload),
+      });
+
+      if (res.ok) {
+        console.log(`[EMAIL DISPATCHED via EmailJS] To: ${options.to}`);
+        return { sent: true, provider: 'emailjs' };
+      } else {
+        const errText = await res.text();
+        console.warn(`[EmailJS Non-Fatal Warning]: Status ${res.status} - ${errText}. Falling back to secondary providers.`);
+      }
+    } catch (err: any) {
+      console.warn(`[EmailJS Request Error]: ${err.message}. Falling back.`);
+    }
+  }
+
+  // 2. Resend API Key priority (fastest, modern HTTP)
   if (env.RESEND_API_KEY) {
     try {
       const res = await fetch('https://api.resend.com/emails', {
@@ -94,7 +136,7 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
     }
   }
 
-  // 2. SMTP Transporter (Nodemailer: Gmail, Brevo, SendGrid, etc.)
+  // 3. SMTP Transporter (Nodemailer: Gmail, Brevo, SendGrid, etc.)
   if (transporter) {
     try {
       const info = await transporter.sendMail({
@@ -112,7 +154,7 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
     }
   }
 
-  // 3. Fallback: Simulated logging when no API key/SMTP is set yet
+  // 4. Fallback: Simulated logging when no API key/SMTP is set yet
   console.log(`[SIMULATED EMAIL] To: ${options.to} | Subject: ${options.subject}`);
   return { sent: true, provider: 'simulated' };
 }
